@@ -1,3 +1,23 @@
+# Takeout TV
+
+This is a modified sample that adds support for Takeout. Features supported:
+
+* Enter endpoint, user, pass to authenticate and access your movies
+* Exoplayer captions are enabled by default, hard coded preference for English
+* High quality audio is enabled by default, hard coded preference to English, 6 channel HD
+* Caption and audio selection displayed in player progress control
+* Watch progress
+
+This is still a prototype however it's usable and appears to work well.
+
+Things to add:
+
+* Look at Watch Next
+* Look at Home Screen Channel
+* Add details screen with description, actors, etc.
+* Server based search
+* Improved top level browsing UI
+
 # TV Reference App
 
 This sample demonstrates how to create a video playback app that is optimized for Android TV and
