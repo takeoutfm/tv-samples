@@ -123,10 +123,10 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         setOnItemViewClickedListener { _, item, _, _ ->
             when (item) {
                 is Video -> {
-                    clearBackground()
                     findNavController().navigate(
                         BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(item)
                     )
+                    clearBackground()
                 }
                 is BrowseCustomMenu.MenuItem -> item.handler()
             }
@@ -142,6 +142,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             findNavController().navigate(
                 BrowseFragmentDirections.actionBrowseFragmentToSearchFragment()
             )
+            clearBackground()
         }
 
         // BrowseSupportFragment allows for adding either text (with setTitle) or a Drawable
@@ -170,7 +171,9 @@ class BrowseFragment : BrowseSupportFragment(), Target {
     }
 
     private fun clearBackground() {
-        backgroundManager.color = 0
+        handler.removeCallbacks(backgroundRunnable)
+        backgroundManager.clearDrawable()
+        showDefaultBackground()
     }
 
     override fun onDestroy() {
