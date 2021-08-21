@@ -1,3 +1,10 @@
+Takeout - TV
+============
+
+This repository is a fork of the Android TV Samples Repository (below). The ReferenceKotlinApp has been
+modified to support Takeout. 
+
+
 Android TV Samples Repository
 =============================
 

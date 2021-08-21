@@ -38,7 +38,7 @@ class RemoteAuthClient : AuthClient {
     override suspend fun validateToken(token: String) =
         wrapResult { service.validateToken(token) }
 
-    override suspend fun authWithPassword(username: String, password: String) =
+    override suspend fun authWithPassword(endpoint: String, username: String, password: String) =
         wrapResult { service.authWithPassword(username, password) }
 
     override suspend fun authWithGoogleIdToken(idToken: String) =

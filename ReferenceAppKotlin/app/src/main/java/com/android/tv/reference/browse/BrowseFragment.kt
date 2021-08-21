@@ -21,14 +21,15 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
+import android.view.View
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import com.android.tv.reference.R
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.image.BlurImageTransformation
 import com.android.tv.reference.shared.image.OverlayImageTransformation
+import com.defsub.takeout.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import timber.log.Timber
@@ -115,15 +116,18 @@ class BrowseFragment : BrowseSupportFragment(), Target {
                         )
                     )
                 )
+                viewModel.refresh()
             }
         )
 
         setOnItemViewClickedListener { _, item, _, _ ->
             when (item) {
-                is Video ->
+                is Video -> {
+                    clearBackground()
                     findNavController().navigate(
                         BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(item)
                     )
+                }
                 is BrowseCustomMenu.MenuItem -> item.handler()
             }
         }
@@ -132,6 +136,12 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             if (item is Video) {
                 updateBackgroundDelayed(item)
             }
+        }
+
+        setOnSearchClickedListener {
+            findNavController().navigate(
+                BrowseFragmentDirections.actionBrowseFragmentToSearchFragment()
+            )
         }
 
         // BrowseSupportFragment allows for adding either text (with setTitle) or a Drawable
@@ -157,6 +167,10 @@ class BrowseFragment : BrowseSupportFragment(), Target {
                 handler.postDelayed(backgroundRunnable, BACKGROUND_UPDATE_DELAY_MILLIS)
             }
         }
+    }
+
+    private fun clearBackground() {
+        backgroundManager.color = 0
     }
 
     override fun onDestroy() {

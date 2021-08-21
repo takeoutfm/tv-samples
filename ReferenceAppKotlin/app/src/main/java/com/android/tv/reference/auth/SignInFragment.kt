@@ -25,9 +25,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.android.tv.reference.R
 import com.android.tv.reference.auth.SignInViewModel.SignInStatus
-import com.android.tv.reference.databinding.FragmentSignInBinding
+import com.defsub.takeout.tv.R
+import com.defsub.takeout.tv.databinding.FragmentSignInBinding
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.ConnectionResult
@@ -81,11 +81,11 @@ class SignInFragment : Fragment() {
                 }
             }
         )
-        binding.signInIntro.text = getString(R.string.sign_in_intro, MockAuthClient.MOCK_USER_EMAIL)
         binding.signInButton.setOnClickListener {
+            val endpoint = binding.endpointEdit.text.toString()
             val username = binding.usernameEdit.text.toString()
             val password = binding.passwordEdit.text.toString()
-            viewModel.signInWithPassword(username, password)
+            viewModel.signInWithPassword(endpoint, username, password)
         }
         startGoogleOneTapRequest()
         return binding.root

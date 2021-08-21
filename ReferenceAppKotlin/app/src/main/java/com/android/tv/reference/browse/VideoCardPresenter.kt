@@ -19,10 +19,10 @@ import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.leanback.widget.Presenter
-import com.android.tv.reference.R
-import com.android.tv.reference.databinding.PresenterVideoCardBinding
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
+import com.defsub.takeout.tv.R
+import com.defsub.takeout.tv.databinding.PresenterVideoCardBinding
 import com.squareup.picasso.Picasso
 
 /**
@@ -36,8 +36,9 @@ class VideoCardPresenter : Presenter() {
         // Set the image size ahead of time since loading can take a while.
         val resources = context.resources
         binding.root.setMainImageDimensions(
-                resources.getDimensionPixelSize(R.dimen.image_card_width),
-                resources.getDimensionPixelSize(R.dimen.image_card_height))
+            resources.getDimensionPixelSize(R.dimen.image_card_width),
+            resources.getDimensionPixelSize(R.dimen.image_card_height)
+        )
 
         return ViewHolder(binding.root)
     }
@@ -47,7 +48,15 @@ class VideoCardPresenter : Presenter() {
         val video = item as Video
         val binding = PresenterVideoCardBinding.bind(viewHolder.view)
         binding.root.titleText = video.name
-        binding.root.contentText = getContentText(binding.root.resources, video)
+
+        val content = StringBuilder()
+        val year = video.year
+        if (year != -1) content.append(year)
+        if (video.rating.isNotEmpty()) {
+            if (year != -1) content.append(" \u2022 ")
+            content.append(video.rating)
+        }
+        binding.root.contentText = content
 
         Picasso.get().load(video.thumbnailUri).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).into(binding.root.mainImageView)

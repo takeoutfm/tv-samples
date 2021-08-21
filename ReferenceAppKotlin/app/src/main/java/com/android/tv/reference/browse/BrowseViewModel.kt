@@ -35,6 +35,10 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     val isSignedIn = Transformations.map(userManager.userInfo) { it != null }
 
     init {
+        refresh()
+    }
+
+    fun refresh() {
         browseContent.value = getVideoGroupList(videoRepository)
     }
 

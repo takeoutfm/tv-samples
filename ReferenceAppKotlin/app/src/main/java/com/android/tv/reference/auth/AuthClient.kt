@@ -16,6 +16,7 @@
 package com.android.tv.reference.auth
 
 import com.android.tv.reference.shared.util.Result
+import com.defsub.takeout.client.Client
 
 /**
  * The authority that verifies the user's identity based on an existing token or credentials.
@@ -23,7 +24,7 @@ import com.android.tv.reference.shared.util.Result
  */
 interface AuthClient {
     suspend fun validateToken(token: String): Result<UserInfo>
-    suspend fun authWithPassword(username: String, password: String): Result<UserInfo>
+    suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<UserInfo>
     suspend fun authWithGoogleIdToken(idToken: String): Result<UserInfo>
     suspend fun invalidateToken(token: String): Result<Unit>
 }
@@ -35,37 +36,24 @@ sealed class AuthClientError(message: String) : Exception(message) {
     ) : AuthClientError("Server error: ${errorCause.message}")
 }
 
-/**
- * A simple implementation of AuthClient that works without a server and is useful for testing
- * purposes.
- */
-class MockAuthClient : AuthClient {
-    private val mockUser = UserInfo("myUserToken", "A. N. Other")
+class TakeoutAuthClient : AuthClient {
 
     override suspend fun validateToken(token: String): Result<UserInfo> {
-        if (token == mockUser.token) {
-            return Result.Success(mockUser)
-        }
         return Result.Error(AuthClientError.AuthenticationError)
     }
 
-    override suspend fun authWithPassword(username: String, password: String): Result<UserInfo> {
-        if (username == MOCK_USER_EMAIL) {
-            return Result.Success(mockUser)
+    override suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<UserInfo> {
+        val client = Client(endpoint)
+        val cookie = client.login(username, password)
+        if (cookie != null) {
+            return Result.Success(UserInfo(cookie, endpoint, username))
         }
         return Result.Error(AuthClientError.AuthenticationError)
     }
 
     override suspend fun authWithGoogleIdToken(idToken: String): Result<UserInfo> {
-        if (idToken.isEmpty()) {
-            return Result.Error(AuthClientError.AuthenticationError)
-        }
-        return Result.Success(mockUser)
+        return Result.Error(AuthClientError.AuthenticationError)
     }
 
     override suspend fun invalidateToken(token: String): Result<Unit> = Result.Success(Unit)
-
-    companion object {
-        const val MOCK_USER_EMAIL = "user@gmail.com"
-    }
 }

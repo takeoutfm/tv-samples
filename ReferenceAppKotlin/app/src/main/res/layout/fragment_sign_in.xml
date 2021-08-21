@@ -28,12 +28,23 @@
         android:layout_height="wrap_content"
         android:text="@string/sign_in" />
 
-    <TextView
-        android:id="@+id/sign_in_intro"
-        style="@style/Body"
+<!--    <TextView-->
+<!--        android:id="@+id/sign_in_intro"-->
+<!--        style="@style/Body"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="20dp" />-->
+
+    <EditText
+        android:id="@+id/endpoint_edit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp" />
+        android:autofillHints="endpoint"
+        android:hint="@string/endpoint"
+        android:importantForAutofill="yes"
+        android:inputType="textUri"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
 
     <EditText
         android:id="@+id/username_edit"

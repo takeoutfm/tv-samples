@@ -18,8 +18,8 @@ package com.android.tv.reference.auth
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.android.tv.reference.R
 import com.android.tv.reference.shared.util.Result
+import com.defsub.takeout.tv.R
 import com.google.android.gms.auth.api.identity.SignInCredential
 
 /**
@@ -43,8 +43,8 @@ class UserManager(
         }
     }
 
-    suspend fun authWithPassword(username: String, password: String): Result<Unit> {
-        return when (val result = server.authWithPassword(username, password)) {
+    suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<Unit> {
+        return when (val result = server.authWithPassword(endpoint, username, password)) {
             is Result.Success -> {
                 updateUserInfo(result.data)
                 Result.Success(Unit)
@@ -90,6 +90,6 @@ class UserManager(
             }
 
         private fun createDefault(context: Context) =
-            UserManager(MockAuthClient(), DefaultUserInfoStorage(context))
+            UserManager(TakeoutAuthClient(), DefaultUserInfoStorage(context))
     }
 }

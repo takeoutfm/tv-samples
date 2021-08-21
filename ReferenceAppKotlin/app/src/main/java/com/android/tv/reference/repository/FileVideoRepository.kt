@@ -16,8 +16,8 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
-import com.android.tv.reference.R
 import com.android.tv.reference.shared.datamodel.Video
+import com.defsub.takeout.tv.R
 
 /**
  * VideoRepository implementation to read video data from a file saved on /res/raw

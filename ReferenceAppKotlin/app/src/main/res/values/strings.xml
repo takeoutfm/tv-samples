@@ -15,7 +15,7 @@
   -->
 
 <resources>
-    <string name="app_name">TV Reference App</string>
+    <string name="app_name">Takeout</string>
 
     <!-- Strings for the "No Firebase" screen -->
     <string name="no_firebase_title">Firebase not configured</string>
@@ -55,4 +55,5 @@
 
     <!-- Watch Next -->
     <string name="season">%1$s Season %2$s</string>
+    <string name="endpoint">https://takeout.fm</string>
 </resources>

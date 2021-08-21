@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.defsub.takeout.tv.BuildConfig
 import com.google.android.gms.cast.tv.CastReceiverContext
 import timber.log.Timber
 
@@ -29,8 +30,14 @@ import timber.log.Timber
  */
 class TvReferenceApplication : Application() {
 
+    companion object {
+        lateinit var instance: TvReferenceApplication
+            private set
+    }
+
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         if (BuildConfig.DEBUG) {
             enableStrictMode()

@@ -21,7 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.android.tv.reference.databinding.FragmentNoFirebaseBinding
+import com.defsub.takeout.tv.databinding.FragmentNoFirebaseBinding
 
 /**
  * Simple Fragment that displays some info about configuring Firebase and has a continue button

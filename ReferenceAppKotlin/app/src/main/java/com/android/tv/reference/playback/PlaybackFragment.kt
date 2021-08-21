@@ -18,27 +18,27 @@ package com.android.tv.reference.playback
 import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.navigation.fragment.findNavController
-import com.android.tv.reference.R
 import com.android.tv.reference.castconnect.CastHelper
 import com.android.tv.reference.shared.datamodel.Video
-import com.google.android.exoplayer2.DefaultControlDispatcher
-import com.google.android.exoplayer2.ExoPlaybackException
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.util.Util
+import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
+import com.google.android.exoplayer2.ui.SubtitleView
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.gms.cast.tv.CastReceiverContext
 import timber.log.Timber
 import java.time.Duration
+import java.util.*
 
 /** Fragment that plays video content with ExoPlayer. */
 class PlaybackFragment : VideoSupportFragment() {
@@ -46,9 +46,12 @@ class PlaybackFragment : VideoSupportFragment() {
     private lateinit var video: Video
 
     private var exoplayer: ExoPlayer? = null
+    private var subtitles: SubtitleView? = null
+    private lateinit var trackSelector: DefaultTrackSelector
     private val viewModel: PlaybackViewModel by viewModels()
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var mediaSessionConnector: MediaSessionConnector
+    private lateinit var glue: ProgressTransportControlGlue<LeanbackPlayerAdapter>
 
     private val uiPlaybackStateListener = object : PlaybackStateListener {
         override fun onChanged(state: VideoPlaybackState) {
@@ -89,15 +92,27 @@ class PlaybackFragment : VideoSupportFragment() {
 
         // Create the MediaSession that will be used throughout the lifecycle of this Fragment.
         createMediaSession()
+
+        backgroundType = BG_DARK
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        subtitles = SubtitleView(requireContext())
+        if (view is ViewGroup) {
+            val root = view as ViewGroup
+            root.addView(subtitles)
+        } else {
+            Timber.e("cannot add subtitles view")
+        }
+
         viewModel.addPlaybackStateListener(uiPlaybackStateListener)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        subtitles = null
         viewModel.removePlaybackStateListener(uiPlaybackStateListener)
     }
 
@@ -123,20 +138,50 @@ class PlaybackFragment : VideoSupportFragment() {
     }
 
     private fun initializePlayer() {
-        val dataSourceFactory = DefaultDataSourceFactory(
-            requireContext(),
-            Util.getUserAgent(requireContext(), getString(R.string.app_name))
-        )
-        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).
-            createMediaSource(MediaItem.fromUri((video.videoUri)))
-        exoplayer = SimpleExoPlayer.Builder(requireContext()).build().apply {
-            setMediaSource(mediaSource)
-            prepare()
-            addListener(PlayerEventListener())
-            prepareGlue(this)
-            mediaSessionConnector.setPlayer(this)
-            mediaSession.isActive = true
-        }
+        val factory = DefaultHttpDataSource.Factory()
+        factory.setDefaultRequestProperties(video.headers)
+
+        val item = MediaItem.Builder()
+            .setMediaMetadata(
+                MediaMetadata.Builder().setTitle(video.name).setSubtitle(video.tagline).build()
+            )
+            .setUri(video.videoUri).build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(factory)
+            .createMediaSource(item)
+
+        trackSelector = DefaultTrackSelector(requireContext())
+        trackSelector.parameters = trackSelector.buildUponParameters()
+            .setRendererDisabled(C.TRACK_TYPE_TEXT, false)
+            .setRendererDisabled(C.TRACK_TYPE_VIDEO, false)
+            .setPreferredTextRoleFlags(C.ROLE_FLAG_SUBTITLE)
+            .setPreferredAudioLanguage("en")
+            .setPreferredTextLanguage("en")
+            .setMaxAudioChannelCount(6) // 5.1
+            .setPreferredAudioMimeTypes(
+                "audio/true-hd",
+                "audio/vnd.dts.hd",
+                "audio/vnd.dts",
+                "audio/ac3",
+                "audio/mp4a-latm"
+            )
+            .setPreferredTextLanguageAndRoleFlagsToCaptioningManagerSettings(requireContext())
+            .build()
+
+
+        exoplayer =
+            SimpleExoPlayer.Builder(requireContext())
+                .setTrackSelector(trackSelector)
+                .build()
+                .apply {
+                    setMediaSource(mediaSource)
+                    addTextOutput(subtitles!!)
+                    prepare()
+                    addListener(PlayerEventListener())
+                    glue = prepareGlue(this, this@PlaybackFragment.trackSelector)
+                    mediaSessionConnector.setPlayer(this)
+                    mediaSession.isActive = true
+                }
 
         viewModel.onStateChange(VideoPlaybackState.Load(video))
     }
@@ -152,18 +197,23 @@ class PlaybackFragment : VideoSupportFragment() {
         }
     }
 
-    private fun prepareGlue(localExoplayer: ExoPlayer) {
-        ProgressTransportControlGlue(
+    private fun prepareGlue(
+        localExoplayer: ExoPlayer,
+        trackSelector: DefaultTrackSelector
+    ): ProgressTransportControlGlue<LeanbackPlayerAdapter> {
+        return ProgressTransportControlGlue(
             requireContext(),
             LeanbackPlayerAdapter(
                 requireContext(),
                 localExoplayer,
                 PLAYER_UPDATE_INTERVAL_MILLIS.toInt()
             ),
-            onProgressUpdate
+            onProgressUpdate,
+            trackSelector
         ).apply {
             host = VideoSupportFragmentGlueHost(this@PlaybackFragment)
             title = video.name
+            subtitle = video.tagline
             // Enable seek manually since PlaybackTransportControlGlue.getSeekProvider() is null,
             // so that PlayerAdapter.seekTo(long) will be called during user seeking.
             // TODO(gargsahil@): Add a PlaybackSeekDataProvider to support video scrubbing.
@@ -211,19 +261,69 @@ class PlaybackFragment : VideoSupportFragment() {
     }
 
     inner class PlayerEventListener : Player.EventListener {
-        override fun onPlayerError(error: ExoPlaybackException) {
+        override fun onPlayerError(error: PlaybackException) {
             Timber.w(error, "Playback error")
             viewModel.onStateChange(VideoPlaybackState.Error(video, error))
+        }
+
+        override fun onTracksChanged(
+            trackGroups: TrackGroupArray,
+            trackSelections: TrackSelectionArray
+        ) {
+            Timber.d("onTracksChanged")
+            var mix: String = ""
+            var enc: String = ""
+            var sub: String = ""
+            for (i in 0 until trackSelections.length) {
+                val s = trackSelections[i] ?: continue
+                for (f in 0 until s.length()) {
+                    val x = s.getFormat(f)
+                    val sampleMimeType = x.sampleMimeType ?: continue
+                    if (sampleMimeType.startsWith("audio/")) {
+                        Timber.d("XXX -> audio ${x.sampleMimeType} ${x.label} ${x.channelCount} ${x.sampleRate}")
+                        mix = when (x.channelCount) {
+                            1 -> "Mono"
+                            2 -> "Stereo"
+                            6 -> "5.1"
+                            7 -> "5.2"
+                            8 -> "7.1"
+                            else -> "${x.channelCount}"
+                        }
+                        enc = when (x.sampleMimeType) {
+                            "audio/mp4a-latm" -> "AAC"
+                            "audio/vnd.dts" -> "DTS"
+                            "audio/vnd.dts.hd" -> "DTS HD"
+                            "audio/true-hd" -> "True HD"
+                            "audio/ac3" -> "AC3"
+                            else -> "${x.sampleMimeType}"
+                        }
+                    } else if (sampleMimeType.startsWith("application/pgs") ||
+                        sampleMimeType.startsWith("application/x-subrip")
+                    ) {
+                        Timber.d("XXX -> subtitle ${x.language}")
+                        sub = Locale(x.language!!).displayName
+                    }
+                    Timber.d(s.getFormat(f).toString())
+                }
+            }
+            var info = "$enc $mix"
+            if (sub.isNotEmpty()) {
+                info = "$info \u2022 $sub"
+            }
+            glue.subtitle = "${video.tagline}  ($info)"
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             when {
                 isPlaying -> viewModel.onStateChange(
-                    VideoPlaybackState.Play(video))
+                    VideoPlaybackState.Play(video)
+                )
                 exoplayer!!.playbackState == Player.STATE_ENDED -> viewModel.onStateChange(
-                    VideoPlaybackState.End(video))
+                    VideoPlaybackState.End(video)
+                )
                 else -> viewModel.onStateChange(
-                    VideoPlaybackState.Pause(video, exoplayer!!.currentPosition))
+                    VideoPlaybackState.Pause(video, exoplayer!!.currentPosition)
+                )
             }
         }
     }

@@ -19,6 +19,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import timber.log.Timber
 
 /**
  * An identity storage persists identity data such as user information and ID token locally.
@@ -39,9 +40,12 @@ class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
         PreferenceManager.getDefaultSharedPreferences(context)
 
     override fun readUserInfo(): UserInfo? {
+        Timber.d("readUserInfo!")
+        Timber.d("token is " + getString("token"))
         return getString("token")?.let { token ->
+            val endpoint = getString("endpoint")
             val displayName = getString("displayName")
-            return UserInfo(token, displayName ?: "")
+            return UserInfo(token, endpoint ?: "", displayName ?: "")
         }
     }
 
@@ -49,6 +53,7 @@ class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
         putStrings(
             mapOf(
                 "token" to userInfo.token,
+                "endpoint" to userInfo.endpoint,
                 "displayName" to userInfo.displayName
             )
         )
@@ -58,6 +63,7 @@ class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
         putStrings(
             mapOf(
                 "token" to null,
+                "endpoint" to null,
                 "displayName" to null
             )
         )
@@ -66,13 +72,13 @@ class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
     private fun getString(key: String): String? =
         sharedPreferences.getString("${KEY_PREFIX}$key", null)
 
-    private fun putString(key: String, value: String) = sharedPreferences.edit(true) {
+    private fun xputString(key: String, value: String?) = sharedPreferences.edit(true) {
         putString("${KEY_PREFIX}$key", value)
     }
 
     private fun putStrings(strings: Map<String, String?>) = sharedPreferences.edit(true) {
         strings.forEach {
-            putString(it.key, it.value)
+            xputString(it.key, it.value)
         }
     }
 }

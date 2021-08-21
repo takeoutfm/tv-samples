@@ -19,7 +19,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph
@@ -30,6 +29,8 @@ import com.android.tv.reference.deeplink.DeepLinkViewModel
 import com.android.tv.reference.deeplink.DeepLinkViewModelFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.util.Result
+import com.defsub.takeout.tv.BuildConfig
+import com.defsub.takeout.tv.R
 import timber.log.Timber
 
 /**
@@ -113,8 +114,9 @@ class MainActivity : FragmentActivity() {
             Timber.d("Firebase is enabled, loading browse")
             navGraph.startDestination = R.id.browseFragment
         } else {
-            Timber.d("Firebase is not enabled; showing notice")
-            navGraph.startDestination = R.id.noFirebaseFragment
+            Timber.d("Firebase is not enabled; loading browse")
+//            navGraph.startDestination = R.id.noFirebaseFragment
+            navGraph.startDestination = R.id.browseFragment
         }
 
         // Set the graph to trigger loading the start destination

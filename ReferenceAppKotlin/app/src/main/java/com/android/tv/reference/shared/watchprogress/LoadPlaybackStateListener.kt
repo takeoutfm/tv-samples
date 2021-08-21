@@ -39,6 +39,7 @@ class LoadPlaybackStateListener(
     private val watchProgressObserver = object: Observer<WatchProgress> {
         override fun onChanged(newWatchProgress: WatchProgress?) {
             startPosition = newWatchProgress?.startPosition ?: 0L
+            Timber.d("progress startPosition is $startPosition")
             if (video!!.isAfterEndCreditsPosition(startPosition!!)) {
                 // Restart from the beginning.
                 Timber.v("WatchProgress position is after end credits; start over")
@@ -74,6 +75,9 @@ class LoadPlaybackStateListener(
             // Unknown start position, load it from the watch progress repository.
             Timber.d("Loading watch progress for video ${state.video.name}")
             watchProgress = watchProgressRepository.getWatchProgressByVideoId(state.video.id)
+            if (watchProgress != null) {
+                Timber.d("Loaded watch progress for video ${watchProgress.toString()}")
+            }
             watchProgress?.observeForever(watchProgressObserver)
         } else {
             // Start position already known, just use it directly.

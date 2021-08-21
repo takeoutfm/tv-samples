@@ -23,6 +23,9 @@ data class UserInfo(
     @field: Json(name = "token")
     val token: String,
 
+    @field: Json(name = "endpoint")
+    val endpoint: String,
+
     @field: Json(name = "displayName")
     val displayName: String
 )

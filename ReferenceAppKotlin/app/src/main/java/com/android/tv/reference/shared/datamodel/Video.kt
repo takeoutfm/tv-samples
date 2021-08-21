@@ -46,7 +46,12 @@ class Video(
     val seriesUri: String = "",
     val seasonUri: String = "",
     val episodeNumber: String = "",
-    val seasonNumber: String = ""
+    val seasonNumber: String = "",
+    val tagline: String = "",
+    val headers: Map<String,String>,
+    val rating: String,
+    val year: Int,
+    val vote: Int,
 ) : Parcelable {
 
     override fun toString(): String {
@@ -70,6 +75,10 @@ class Video(
     fun isAfterEndCreditsPosition(positionMillis: Long): Boolean {
         // Skip calculation for the common case of starting from 0ms.
         if (positionMillis <= 0) {
+            return false
+        }
+        // Actual duration unknown
+        if (duration == "PT00H00M") {
             return false
         }
         val durationMillis = duration().toMillis() * VIDEO_COMPLETED_DURATION_MAX_PERCENTAGE

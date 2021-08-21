@@ -32,12 +32,12 @@ class SignInViewModel(private val userManager: UserManager) :
     private val signInStatusMutable = MutableLiveData<SignInStatus>()
     val signInStatus: LiveData<SignInStatus> = signInStatusMutable
 
-    fun signInWithPassword(username: String, password: String) {
-        if (username.isEmpty() || password.isEmpty()) {
+    fun signInWithPassword(endpoint: String, username: String, password: String) {
+        if (endpoint.isEmpty() || username.isEmpty() || password.isEmpty()) {
             signInStatusMutable.value = SignInStatus.Error.InputError
         } else {
             viewModelScope.launch(Dispatchers.IO) {
-                signInStatusMutable.postValue(authWithPassword(username, password))
+                signInStatusMutable.postValue(authWithPassword(endpoint, username, password))
             }
         }
     }
@@ -47,8 +47,8 @@ class SignInViewModel(private val userManager: UserManager) :
             signInStatusMutable.postValue(authWithOneTapCredential(credential))
         }
 
-    private suspend fun authWithPassword(username: String, password: String): SignInStatus =
-        when (val result = userManager.authWithPassword(username, password)) {
+    private suspend fun authWithPassword(endpoint: String, username: String, password: String): SignInStatus =
+        when (val result = userManager.authWithPassword(endpoint, username, password)) {
             is Result.Success -> SignInStatus.ShouldSavePassword(username, password)
             is Result.Error -> {
                 when (result.exception) {
@@ -65,7 +65,7 @@ class SignInViewModel(private val userManager: UserManager) :
     private suspend fun authWithOneTapCredential(credential: SignInCredential) =
         when {
             credential.googleIdToken != null -> authWithGoogleIdToken(credential)
-            credential.password != null -> authWithPassword(credential.id, credential.password!!)
+            credential.password != null -> authWithPassword("????", credential.id, credential.password!!)
             else -> SignInStatus.Error.OneTapInvalid
         }
 

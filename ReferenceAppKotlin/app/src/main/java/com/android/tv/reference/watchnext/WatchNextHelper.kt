@@ -30,10 +30,10 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.tvprovider.media.tv.WatchNextProgram
 import androidx.tvprovider.media.tv.WatchNextProgram.Builder
 import androidx.tvprovider.media.tv.WatchNextProgram.fromCursor
-import com.android.tv.reference.R
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
+import com.defsub.takeout.tv.R
 import timber.log.Timber
 import java.time.Duration
 import java.util.concurrent.TimeUnit
