@@ -63,7 +63,7 @@ class CastMediaLoadCommandCallback(
         } else {
             Tasks.call {
                 var videoToPlay = convertLoadRequestToVideo(
-                    mediaLoadRequestData, VideoRepositoryFactory.getVideoRepository(application)
+                    mediaLoadRequestData, VideoRepositoryFactory.getVideoRepository()
                 )
                 if (videoToPlay != null) {
                     onLoaded(videoToPlay, mediaLoadRequestData)

@@ -134,8 +134,24 @@ class Client(private val endpoint: String = defaultEndpoint,
         return get("/api/movies", ttl)
     }
 
+    suspend fun movie(id: Int, ttl: Int): MovieView {
+        return get("/api/movies/$id", ttl)
+    }
+
+    suspend fun profile(id: Int, ttl: Int): ProfileView {
+        return get("/api/profiles/$id", ttl)
+    }
+
+    suspend fun genre(name: String, ttl: Int): GenreView {
+        return get("/api/movies/genres/$name", ttl)
+    }
+
     suspend fun playlist(ttl: Int? = null): Spiff {
         return get("/api/playlist", ttl)
+    }
+
+    suspend fun search(query: String): SearchView {
+        return get("/api/search?q=$query", 0)
     }
 
     companion object {

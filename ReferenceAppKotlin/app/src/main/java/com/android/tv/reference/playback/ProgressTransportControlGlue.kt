@@ -123,23 +123,17 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 
     private fun toggleClosedCaptions() {
         val mappedTrackInfo = trackSelector.currentMappedTrackInfo ?: return
-//        for (rendererIndex in 0 until mappedTrackInfo.rendererCount) {
-//            val trackType = mappedTrackInfo.getRendererType(rendererIndex)
-//            if (trackType == C.TRACK_TYPE_AUDIO) {
-//                val groups = mappedTrackInfo.getTrackGroups(trackType)
-//                Timber.d("audio groups ${groups.length}")
-//                printGroup(groups)
-//            } else if (trackType == C.TRACK_TYPE_VIDEO) {
-//                val groups = mappedTrackInfo.getTrackGroups(trackType)
-//                Timber.d("video groups ${groups.length}")
-//                printGroup(groups)
-//
-//            } else if (trackType == C.TRACK_TYPE_TEXT) {
-//                val groups = mappedTrackInfo.getTrackGroups(trackType)
-//                Timber.d("text groups ${groups.length}")
-//                printGroup(groups)
-//            }
-//        }
+        for (rendererIndex in 0 until mappedTrackInfo.rendererCount) {
+            val trackType = mappedTrackInfo.getRendererType(rendererIndex)
+            if (trackType == C.TRACK_TYPE_AUDIO) {
+                val groups = mappedTrackInfo.getTrackGroups(trackType)
+                Timber.d("audio groups ${groups.length}")
+                printGroup(groups)
+            } else if (trackType == C.TRACK_TYPE_VIDEO) {
+                val groups = mappedTrackInfo.getTrackGroups(trackType)
+                printGroup(groups)
+            }
+        }
 
         val trackGroups = mappedTrackInfo.getTrackGroups(C.TRACK_TYPE_VIDEO)
         if (closedCaptioningAction.index == INDEX_ON) {

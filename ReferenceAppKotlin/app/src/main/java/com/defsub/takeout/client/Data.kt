@@ -303,6 +303,20 @@ data class MovieView(
 )
 
 @Serializable
+data class ProfileView(
+    @SerialName("Person") val person: Person,
+    @SerialName("Starring") val starring: List<Movie>?,
+    @SerialName("Directing") val directing: List<Movie>?,
+    @SerialName("Writing") val writing: List<Movie>?,
+)
+
+@Serializable
+data class GenreView(
+    @SerialName("Name") val name: String,
+    @SerialName("Movies") val movies: List<Movie>,
+)
+
+@Serializable
 data class ArtistsView(
     @SerialName("Artists") val artists: List<Artist>?
 )

@@ -16,25 +16,17 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
+import com.android.tv.reference.TvReferenceApplication
 import com.defsub.takeout.repository.TakeoutVideoRepository
 
 /**
  * Class to create a VideoRepository implementation according to specific requirements.
  */
-class VideoRepositoryFactory private constructor() {
+object VideoRepositoryFactory {
 
-    companion object {
-        var repo : VideoRepository? = null
+    private var repo: VideoRepository = TakeoutVideoRepository(TvReferenceApplication.instance)
 
-        fun getVideoRepository(application: Application): VideoRepository {
-            /**
-             * Return a specific VideoRepository implementation following some rules.
-             * Currently, only the FileVideoService implementation is available.
-             */
-            if (repo == null) {
-                repo = TakeoutVideoRepository(application)
-            }
-            return repo as VideoRepository
-        }
+    fun getVideoRepository(): VideoRepository {
+        return repo
     }
 }

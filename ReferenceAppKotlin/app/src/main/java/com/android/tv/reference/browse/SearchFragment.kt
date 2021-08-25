@@ -1,34 +1,64 @@
 package com.android.tv.reference.browse
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.SearchSupportFragment
 import androidx.leanback.widget.*
 import androidx.navigation.fragment.findNavController
-import com.android.tv.reference.TvReferenceApplication
-import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
-import java.util.*
+import com.defsub.takeout.tv.R
 
 class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResultProvider {
 
+    companion object {
+        private const val SEARCH_DELAY_MILLIS = 500L
+        private const val BACKGROUND_RESOURCE_ID = R.drawable.image_placeholder
+
+        // check for things like:
+        //   title:"text text" or cast:text*
+        private val SPECIAL_CHARS = Regex("""[:"\\*]+""")
+    }
+
     private lateinit var rowsAdapter : ArrayObjectAdapter
-    private lateinit var videoRepository : VideoRepository
+    private lateinit var handler: Handler
+    private lateinit var backgroundManager: BackgroundManager
+
+    private var searchQuery: String = ""
+
+    private val searchRunnable: Runnable = Runnable {
+        searchImmediate()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
-        videoRepository = VideoRepositoryFactory.getVideoRepository(TvReferenceApplication.instance)
+        handler = Handler(Looper.getMainLooper())
+
+        backgroundManager = BackgroundManager.getInstance(requireActivity()).apply {
+            if (!isAttached) {
+                attach(requireActivity().window)
+            }
+            setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
+        }
+
         setSearchResultProvider(this)
 
         setOnItemViewClickedListener { _, item, _, _ ->
             when (item) {
                 is Video ->
                     findNavController().navigate(
-                        SearchFragmentDirections.actionSearchFragmentToPlaybackFragment(item)
+                        SearchFragmentDirections.actionSearchFragmentToDetailsFragment(item)
                     )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        backgroundManager.clearDrawable()
     }
 
     override fun getResultsAdapter(): ObjectAdapter {
@@ -36,35 +66,40 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
     }
 
     override fun onQueryTextChange(newQuery: String?): Boolean {
-        if (newQuery != null) {
-            doSearch(newQuery)
+        if (newQuery != null && newQuery.length > 2) {
+            searchDelayed(newQuery)
         }
         return true
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
         if (query != null) {
-            doSearch(query)
+            searchDelayed(query)
         }
         return true
     }
 
-    private fun doSearch(query : String) {
-        if (query.isEmpty()) {
-            return
+    private fun searchDelayed(query: String) {
+        if (searchQuery != query) {
+            handler.removeCallbacks(searchRunnable)
+        }
+        if (query.isNotEmpty()) {
+            searchQuery = query
+            handler.postDelayed(searchRunnable, SEARCH_DELAY_MILLIS)
+        }
+    }
+
+    private fun searchImmediate() {
+        var pattern = searchQuery
+        if (!pattern.contains(SPECIAL_CHARS)) {
+            pattern = "title:$pattern* cast:$pattern* genre:$pattern* directing:$pattern* writing:$pattern*"
         }
 
-        val results = mutableListOf<Video>()
-        for (video in videoRepository.getAllVideos()) {
-            if (video.name.toLowerCase(Locale.getDefault()).contains(query)) {
-                results.add(video)
-            }
-        }
+        val videos = VideoRepositoryFactory.getVideoRepository().search(pattern) ?: emptyList()
 
         rowsAdapter.clear()
-        val cardPresenter = VideoCardPresenter()
-        val listRowAdapter = ArrayObjectAdapter(cardPresenter)
-        listRowAdapter.addAll(0, results)
+        val listRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
+        listRowAdapter.addAll(0, videos)
         rowsAdapter.add(ListRow(listRowAdapter))
     }
 }

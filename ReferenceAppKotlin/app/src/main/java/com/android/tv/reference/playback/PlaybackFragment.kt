@@ -270,14 +270,19 @@ class PlaybackFragment : VideoSupportFragment() {
             trackGroups: TrackGroupArray,
             trackSelections: TrackSelectionArray
         ) {
-            Timber.d("onTracksChanged")
-            var mix: String = ""
-            var enc: String = ""
-            var sub: String = ""
+            // audio
+            var enc = "None"
+            var mix = ""
+            // subtitles
+            var sub = ""
+            // video
+            var vid = ""
+            var def = ""
             for (i in 0 until trackSelections.length) {
                 val s = trackSelections[i] ?: continue
                 for (f in 0 until s.length()) {
                     val x = s.getFormat(f)
+//                    Timber.d(s.getFormat(f).toString())
                     val sampleMimeType = x.sampleMimeType ?: continue
                     if (sampleMimeType.startsWith("audio/")) {
                         Timber.d("XXX -> audio ${x.sampleMimeType} ${x.label} ${x.channelCount} ${x.sampleRate}")
@@ -298,15 +303,36 @@ class PlaybackFragment : VideoSupportFragment() {
                             else -> "${x.sampleMimeType}"
                         }
                     } else if (sampleMimeType.startsWith("application/pgs") ||
-                        sampleMimeType.startsWith("application/x-subrip")
+                        sampleMimeType.startsWith("application/x-subrip") // vobsub?
                     ) {
-                        Timber.d("XXX -> subtitle ${x.language}")
                         sub = Locale(x.language!!).displayName
+                    } else if (sampleMimeType.startsWith("video/")) {
+                        vid = when (x.sampleMimeType) {
+                            "video/hevc" -> "HEVC"
+                            "video/avc" -> "AVC"
+                            "video/av1" -> "AV1"
+                            "video/vp9" -> "VP9"
+                            "video/vp8" -> "VP8"
+                            else -> "${x.sampleMimeType}"
+                        }
+                        // HD 1914 x 1036
+                        // HD 1906 x 816
+                        // HD 1920 x 804
+                        // SD 662 x 478
+                        val height = x.height
+                        def = when {
+                            height <= 480 -> "480p"
+                            height in 481..720 -> "720p"
+                            height in 721..1080 -> "1080p"
+                            height in 1081..1440 -> "1440p"
+                            height in 1441..2160 -> "4K"
+                            height in 2161..4320 -> "8K"
+                            else -> "$height"
+                        }
                     }
-                    Timber.d(s.getFormat(f).toString())
                 }
             }
-            var info = "$enc $mix"
+            var info = "$vid $def \u2022 $enc $mix"
             if (sub.isNotEmpty()) {
                 info = "$info \u2022 $sub"
             }

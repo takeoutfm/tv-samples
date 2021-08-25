@@ -20,15 +20,18 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.viewModelScope
+import com.android.tv.reference.TvReferenceApplication
 import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.VideoGroup
+import com.defsub.takeout.tv.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class BrowseViewModel(application: Application) : AndroidViewModel(application) {
-    private val videoRepository = VideoRepositoryFactory.getVideoRepository(application)
+    private val videoRepository = VideoRepositoryFactory.getVideoRepository()
     private val userManager = UserManager.getInstance(application.applicationContext)
     val browseContent = MutableLiveData<List<VideoGroup>>()
     val customMenuItems = MutableLiveData<List<BrowseCustomMenu>>(listOf())
@@ -45,10 +48,15 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
         val videosByCategory = repository.getAllVideos().groupBy { it.category }
         val videoGroupList = mutableListOf<VideoGroup>()
+        val context = getApplication<TvReferenceApplication>()
+        videoGroupList.add(VideoGroup(
+            context.getString(R.string.new_releases),
+            repository.getNewReleases()))
+        videoGroupList.add(VideoGroup(context.getString(R.string.recently_added),
+            repository.getRecentlyAdded()))
         videosByCategory.forEach { (k, v) ->
             videoGroupList.add(VideoGroup(k, v))
         }
-
         return videoGroupList
     }
 

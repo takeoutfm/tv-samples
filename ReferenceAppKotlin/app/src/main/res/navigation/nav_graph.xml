@@ -67,6 +67,9 @@
         <action
             android:id="@+id/action_browseFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
+        <action
+            android:id="@+id/action_browseFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
     </fragment>
     <fragment
         android:id="@+id/noFirebaseFragment"
@@ -89,5 +92,39 @@
         <action
             android:id="@+id/action_searchFragment_to_playbackFragment"
             app:destination="@id/playbackFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/detailsFragment"
+        android:name="com.android.tv.reference.browse.DetailsFragment"
+        android:label="DetailsFragment">
+        <action
+            android:id="@+id/action_detailsFragment_to_playbackFragment"
+            app:destination="@id/playbackFragment" />
+        <action
+            android:id="@+id/action_detailsFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
+        <action
+            android:id="@+id/action_detailsFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <argument
+            android:name="video"
+            app:argType="com.android.tv.reference.shared.datamodel.Video" />
+    </fragment>
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.android.tv.reference.browse.ProfileFragment"
+        android:label="ProfileFragment">
+        <action
+            android:id="@+id/action_profileFragment_to_playbackFragment"
+            app:destination="@id/playbackFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
+        <argument
+            android:name="profile"
+            app:argType="com.android.tv.reference.shared.datamodel.Profile" />
     </fragment>
 </navigation>

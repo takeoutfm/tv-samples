@@ -16,6 +16,8 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
+import com.android.tv.reference.shared.datamodel.Detail
+import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
 
@@ -30,6 +32,11 @@ interface VideoRepository {
      * @return List<Video>
      */
     fun getAllVideos(): List<Video>
+    fun getNewReleases(): List<Video>
+    fun getRecentlyAdded(): List<Video>
+    fun getVideoDetail(id: String): Detail?
+    fun getProfile(id: String): Profile?
+    fun search(query: String): List<Video>
 
     /**
      * Returns a Video for the passed [id] or null if there is no matching video.

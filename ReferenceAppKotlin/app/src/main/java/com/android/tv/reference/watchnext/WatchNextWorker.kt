@@ -66,7 +66,7 @@ class WatchNextWorker(private val context: Context, params: WorkerParameters) :
 
         // Step 3: Get video object from videoId to be added to Watch Next.
         val video =
-            VideoRepositoryFactory.getVideoRepository(context.applicationContext as Application)
+            VideoRepositoryFactory.getVideoRepository()
                 .getVideoById(videoId)
 
         Timber.v("Retrieved video from repository with id %s, %s", videoId, video)
@@ -81,8 +81,7 @@ class WatchNextWorker(private val context: Context, params: WorkerParameters) :
                 Timber.v("Add Episode to Watch Next : id = ${video.id}")
                 WatchNextHelper.handleWatchNextForEpisode(
                     video, watchPosition.toInt(), state,
-                    VideoRepositoryFactory.getVideoRepository(
-                        context.applicationContext as Application), context)
+                    VideoRepositoryFactory.getVideoRepository(), context)
             }
             VideoType.CLIP -> Timber.w(
                 "NOT recommended to add Clips / Trailers /Short videos to Watch Next "

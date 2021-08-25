@@ -34,7 +34,7 @@ import timber.log.Timber
  * that we have metadata for and loading the corresponding Video object.
  */
 class DeepLinkViewModel(application: Application, deepLinkUri: Uri) : ViewModel() {
-    private val videoRepository = VideoRepositoryFactory.getVideoRepository(application)
+    private val videoRepository = VideoRepositoryFactory.getVideoRepository()
     val deepLinkResult = MutableLiveData<SingleUseEvent<Result<Video>>>()
 
     init {

@@ -16,6 +16,8 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
+import com.android.tv.reference.shared.datamodel.Detail
+import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
 import com.defsub.takeout.tv.R
 
@@ -38,6 +40,26 @@ class FileVideoRepository(override val application: Application) : VideoReposito
 
     override fun getAllVideos(): List<Video> {
         return _allVideos
+    }
+
+    override fun getNewReleases(): List<Video> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getRecentlyAdded(): List<Video> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getVideoDetail(id: String): Detail? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getProfile(id: String): Profile? {
+        TODO("Not yet implemented")
+    }
+
+    override fun search(query: String): List<Video> {
+        TODO("Not yet implemented")
     }
 
     override fun getVideoById(id: String): Video? {

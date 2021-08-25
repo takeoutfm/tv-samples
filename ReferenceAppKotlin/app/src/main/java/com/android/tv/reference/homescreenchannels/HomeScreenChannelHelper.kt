@@ -77,7 +77,7 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
         excludedIds: Set<String>,
         countToAdd: Int
     ): List<Video> {
-        val videoRepository = VideoRepositoryFactory.getVideoRepository(application)
+        val videoRepository = VideoRepositoryFactory.getVideoRepository()
         return videoRepository.getAllVideos()
             .shuffled() // Mix the videos to avoid getting all of one type
             .filterNot { excludedIds.contains(it.id) } // Exclude videos already in the channel

@@ -26,6 +26,7 @@ import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.image.BlurImageTransformation
 import com.android.tv.reference.shared.image.OverlayImageTransformation
@@ -50,6 +51,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
     private lateinit var viewModel: BrowseViewModel
     private lateinit var backgroundManager: BackgroundManager
     private lateinit var handler: Handler
+    private var selectedVideo: Video? = null
 
     private val overlayImageTransformation =
         OverlayImageTransformation()
@@ -123,10 +125,11 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         setOnItemViewClickedListener { _, item, _, _ ->
             when (item) {
                 is Video -> {
+                    selectedVideo = item
                     findNavController().navigate(
-                        BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(item)
+                        BrowseFragmentDirections.actionBrowseFragmentToDetailsFragment(item)
                     )
-                    clearBackground()
+//                    clearBackground()
                 }
                 is BrowseCustomMenu.MenuItem -> item.handler()
             }
@@ -142,13 +145,20 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             findNavController().navigate(
                 BrowseFragmentDirections.actionBrowseFragmentToSearchFragment()
             )
-            clearBackground()
         }
 
         // BrowseSupportFragment allows for adding either text (with setTitle) or a Drawable
         // (with setBadgeDrawable) to the top right of the screen. Since we don't have a suitable
         // Drawable, we just display the app name in text.
         title = getString(R.string.app_name)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (selectedVideo != null) {
+            backgroundUri = ""
+            updateBackgroundDelayed(selectedVideo!!)
+        }
     }
 
     /**
