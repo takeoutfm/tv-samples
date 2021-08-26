@@ -129,8 +129,9 @@ object WatchNextHelper {
         val hasVideoStarted =
             (currentPosition >= (durationInMilliSeconds * WATCH_NEXT_STARTED_MIN_PERCENTAGE)) or
               (currentPosition >= watchNextMinStartedMillis)
-        val hasVideoStartedWithValidPosition =
-            ((currentPosition <= durationInMilliSeconds) and hasVideoStarted)
+        val hasVideoStartedWithValidPosition = true
+        // TODO fix when have duration populated
+//            ((currentPosition <= durationInMilliSeconds) and hasVideoStarted)
         Timber.v(
             "Has video started: %s, duration: %s, watchPosition: %s",
             hasVideoStartedWithValidPosition,

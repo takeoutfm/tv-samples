@@ -33,6 +33,7 @@ import timber.log.Timber
  *
  * <code>
  * adb shell am broadcast -a android.media.tv.action.INITIALIZE_PROGRAMS -n com.android.tv.reference/.homescreenchannels.HomeScreenChannelReceiver
+ * adb shell am broadcast -a android.media.tv.action.INITIALIZE_PROGRAMS -n com.defsub.takeout.tv/com.android.tv.reference.homescreenchannels.HomeScreenChannelReceiver
  * </code>
  */
 class HomeScreenChannelReceiver : BroadcastReceiver() {

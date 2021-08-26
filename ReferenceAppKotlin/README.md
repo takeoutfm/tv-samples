@@ -7,16 +7,11 @@ This is a modified sample that adds support for Takeout. Features supported:
 * High quality audio is enabled by default, hard coded preference to English, 6 channel HD
 * Caption and audio selection displayed in player progress control
 * Watch progress
+* Watch next
+* Home screen channel with recently added
+* Server-based search (title, cast, genre, directing, writing)
 
 This is still a prototype however it's usable and appears to work well.
-
-Things to add:
-
-* Look at Watch Next
-* Look at Home Screen Channel
-* Add details screen with description, actors, etc.
-* Server based search
-* Improved top level browsing UI
 
 # TV Reference App
 
