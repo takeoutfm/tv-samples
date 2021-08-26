@@ -18,6 +18,7 @@
 package com.defsub.takeout.repository
 
 import android.app.Application
+import android.net.Uri
 import com.android.tv.reference.auth.UserInfo
 import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
@@ -108,11 +109,19 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return allVideos
     }
 
+    private val idPattern = Regex("""/([0-9]+)/?""")
+
+    private fun getId(uri: String): Int {
+        val values = idPattern.find(uri)?.groupValues ?: emptyList()
+        return if (values.isNotEmpty()) values[1].toInt() else -1
+    }
+
+    // takeout://movies/$id
     override fun getVideoDetail(id: String): Detail? {
         if (!checkSignedIn()) return null
         var detail: Detail? = null
         runBlocking {
-            val view = client!!.movie(id.toInt(), 0)
+            val view = client!!.movie(getId(id), 0)
             detail = toDetail(view)
         }
         return detail
@@ -122,7 +131,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         if (!checkSignedIn()) return null
         var profile: Profile? = null
         runBlocking {
-            val view = client!!.profile(id.toInt(), 0)
+            val view = client!!.profile(getId(id), 0)
             profile = toProfile(view)
         }
         return profile
@@ -140,7 +149,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     override fun getVideoById(id: String): Video? {
         for (v in getAllVideos()) {
-            if (v.name == id) {
+            if (v.id == id) {
                 return v
             }
         }
@@ -158,7 +167,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     private fun toProfile(p: com.defsub.takeout.client.ProfileView): Profile {
         return Profile(
-            id = p.person.id.toString(),
+            id = "takeout://people/${p.person.id}/profile",
             person = toPerson(p.person),
             videos = p.starring?.map { toVideo(it) } ?: emptyList()
         )
@@ -166,18 +175,18 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     private fun toPerson(p: com.defsub.takeout.client.Person): Person {
         return Person(
-            id = p.id.toString(),
+            id = "takeout://people/${p.id}",
             name = p.name,
             bio = p.bio ?: "",
             birthplace = p.birthplace ?: "",
-            birthday = p.birthday ?: "",
+            birthday = p.year(),
             thumbnailUri = "http://image.tmdb.org/t/p/w185/${p.profilePath}"
         )
     }
 
     private fun toCast(c: com.defsub.takeout.client.Cast): Cast {
         return Cast(
-            id = c.id.toString(),
+            id = "takeout://cast/${c.id}",
             person = toPerson(c.person),
             character = c.character
         )
@@ -185,7 +194,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     private fun toDetail(view: com.defsub.takeout.client.MovieView): Detail {
         return Detail(
-            id = view.movie.id.toString(),
+            id = "takeout://movies/${view.movie.id}/detail",
             video = toVideo(view.movie),
             genres = view.genres ?: emptyList(),
             cast = view.cast?.map { toCast(it) } ?: emptyList(),
@@ -200,11 +209,12 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         val locationUrl = "${userInfo.endpoint}${m.location()}"
         val category = "${m.sortTitle[0]}"
         val vote = if (m.voteAverage == null) 0 else (m.voteAverage * 10).toInt()
+        val uri = "takeout://movies/${m.id}"
         return Video(
-            id = m.id.toString(),
+            id = uri,
             name = m.title,
             description = m.overview,
-            uri = locationUrl,
+            uri = uri,
             videoUri = locationUrl,
             thumbnailUri = posterUrl,
             backgroundImageUri = backdropUrl,

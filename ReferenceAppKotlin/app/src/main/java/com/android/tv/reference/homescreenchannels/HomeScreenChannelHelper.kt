@@ -32,6 +32,7 @@ import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
 import com.defsub.takeout.tv.R
+import timber.log.Timber
 
 /**
  * Helper class that simplifies interactions with the ATV home screen
@@ -41,8 +42,7 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
 
     companion object {
         private const val DEFAULT_CHANNEL_ID = "DEFAULT_CHANNEL_ID"
-        private const val DEFAULT_CHANNEL_LINK =
-            "https://atv-reference-app.firebaseapp.com/channels/default"
+        private const val DEFAULT_CHANNEL_LINK = "takeout://"
     }
 
     // Creates a new default home screen channel and returns its ID
@@ -52,8 +52,8 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
             R.mipmap.ic_channel_default
         )
         val defaultChannel = PreviewChannel.Builder()
-            .setDisplayName(context.getString(R.string.default_home_screen_channel_name))
-            .setDescription(context.getString(R.string.default_home_screen_channel_description))
+            .setDisplayName(context.getString(R.string.added_channel_name))
+            .setDescription(context.getString(R.string.added_channel_description))
             .setAppLinkIntentUri(Uri.parse(DEFAULT_CHANNEL_LINK))
             .setInternalProviderId(DEFAULT_CHANNEL_ID)
             .setLogo(logo)
@@ -78,10 +78,10 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
         countToAdd: Int
     ): List<Video> {
         val videoRepository = VideoRepositoryFactory.getVideoRepository()
-        return videoRepository.getAllVideos()
-            .shuffled() // Mix the videos to avoid getting all of one type
-            .filterNot { excludedIds.contains(it.id) } // Exclude videos already in the channel
-            .take(countToAdd) // Take only as many as needed to fill the channel
+        return videoRepository.getRecentlyAdded()
+//            .shuffled() // Mix the videos to avoid getting all of one type
+//            .filterNot { excludedIds.contains(it.id) } // Exclude videos already in the channel
+//            .take(countToAdd) // Take only as many as needed to fill the channel
     }
 
     /**
@@ -109,6 +109,14 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
      */
     fun getDefaultChannel(): PreviewChannel? {
         return getChannelByInternalProviderId(DEFAULT_CHANNEL_ID)
+    }
+
+    fun cleanup() {
+        previewChannelHelper.allChannels.forEach {
+            if (it.packageName == "com.defsub.takeout.tv") {
+                previewChannelHelper.deletePreviewChannel(it.id)
+            }
+        }
     }
 
     /**

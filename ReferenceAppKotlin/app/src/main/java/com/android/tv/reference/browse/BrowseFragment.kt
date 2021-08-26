@@ -45,7 +45,6 @@ class BrowseFragment : BrowseSupportFragment(), Target {
 
     companion object {
         private const val BACKGROUND_UPDATE_DELAY_MILLIS = 500L
-        private const val BACKGROUND_RESOURCE_ID = R.drawable.image_placeholder
     }
 
     private lateinit var viewModel: BrowseViewModel
@@ -74,12 +73,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         blurImageTransformation = BlurImageTransformation(requireContext())
 
         handler = Handler(Looper.getMainLooper())
-        backgroundManager = BackgroundManager.getInstance(requireActivity()).apply {
-            if (!isAttached) {
-                attach(requireActivity().window)
-            }
-            setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
-        }
+        backgroundManager = BackgroundManager.getInstance(requireActivity())
 
         val signInMenuItem = BrowseCustomMenu.MenuItem(getString(R.string.sign_in)) {
             findNavController().navigate(R.id.action_global_signInFragment)
@@ -155,6 +149,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
 
     override fun onResume() {
         super.onResume()
+        backgroundManager.clearDrawable()
         if (selectedVideo != null) {
             backgroundUri = ""
             updateBackgroundDelayed(selectedVideo!!)
@@ -173,17 +168,11 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             backgroundUri = video.backgroundImageUri
 
             if (backgroundUri.isEmpty()) {
-                backgroundManager.setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
+                backgroundManager.clearDrawable()
             } else {
                 handler.postDelayed(backgroundRunnable, BACKGROUND_UPDATE_DELAY_MILLIS)
             }
         }
-    }
-
-    private fun clearBackground() {
-        handler.removeCallbacks(backgroundRunnable)
-        backgroundManager.clearDrawable()
-        showDefaultBackground()
     }
 
     override fun onDestroy() {
@@ -226,6 +215,6 @@ class BrowseFragment : BrowseSupportFragment(), Target {
 
     private fun showDefaultBackground() {
         backgroundUri = ""
-        backgroundManager.setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
+        backgroundManager.clearDrawable()
     }
 }

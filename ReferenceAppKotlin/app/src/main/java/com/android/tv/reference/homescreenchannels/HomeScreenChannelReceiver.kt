@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
+import timber.log.Timber
 
 /**
  * BroadcastReceiver that initializes the home screen channel.

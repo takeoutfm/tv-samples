@@ -204,6 +204,10 @@ data class Person(
     @SerialName("Deathday") val deathday: String?
 )
 
+fun Person.year(): Int {
+    return year(birthday)
+}
+
 @Serializable
 data class Cast(
     @SerialName("ID") val id: Int,
@@ -357,11 +361,13 @@ data class Playlist(
     @SerialName("track") val tracks: List<Entry>
 )
 
-fun year(date: String?): Int {
-    var year = -1;
+private val utcFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))
+
+private fun year(date: String?): Int {
+    var year = -1
     date?.let {
         try {
-            val d = LocalDate.parse(date, DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC")))
+            val d = LocalDate.parse(date, utcFormatter)
             year = d.year
         } catch (e: DateTimeException) {
         }

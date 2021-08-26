@@ -16,7 +16,6 @@ import com.squareup.picasso.Target
 class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListener {
     companion object {
         private const val MOVIES_ACTION = 1L
-        private const val BACKGROUND_RESOURCE_ID = R.drawable.image_placeholder
     }
 
     private lateinit var profile: Profile
@@ -28,13 +27,7 @@ class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         onItemViewClickedListener = this
 
-        backgroundManager = BackgroundManager.getInstance(requireActivity()).apply {
-            if (!isAttached) {
-                attach(requireActivity().window)
-            }
-            setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
-        }
-
+        backgroundManager = BackgroundManager.getInstance(requireActivity())
         profile = ProfileFragmentArgs.fromBundle(requireArguments()).profile
         title = profile.person.name
 

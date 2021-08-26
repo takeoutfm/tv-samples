@@ -46,7 +46,7 @@ class DeepLinkViewModel(application: Application, deepLinkUri: Uri) : ViewModel(
 
         fun getDeepLinkVideo(deepLinkUri: Uri, videoRepository: VideoRepository): Result<Video> {
             try {
-                return videoRepository.getVideoById((deepLinkUri.toString()))
+                return videoRepository.getVideoById(deepLinkUri.toString())
                     ?.let { Result.Success(it) }
                     ?: Result.Error(Exception("Invalid video ID in deep link"))
             } catch (e: Exception) {

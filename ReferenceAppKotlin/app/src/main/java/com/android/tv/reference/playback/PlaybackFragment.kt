@@ -20,6 +20,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.navigation.fragment.findNavController
@@ -52,6 +53,7 @@ class PlaybackFragment : VideoSupportFragment() {
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var mediaSessionConnector: MediaSessionConnector
     private lateinit var glue: ProgressTransportControlGlue<LeanbackPlayerAdapter>
+    private lateinit var backgroundManager: BackgroundManager
 
     private val uiPlaybackStateListener = object : PlaybackStateListener {
         override fun onChanged(state: VideoPlaybackState) {
@@ -87,6 +89,8 @@ class PlaybackFragment : VideoSupportFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        backgroundManager = BackgroundManager.getInstance(requireActivity())
+
         // Get the video data.
         video = PlaybackFragmentArgs.fromBundle(requireArguments()).video
 
@@ -108,6 +112,11 @@ class PlaybackFragment : VideoSupportFragment() {
         }
 
         viewModel.addPlaybackStateListener(uiPlaybackStateListener)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        backgroundManager.clearDrawable()
     }
 
     override fun onDestroyView() {

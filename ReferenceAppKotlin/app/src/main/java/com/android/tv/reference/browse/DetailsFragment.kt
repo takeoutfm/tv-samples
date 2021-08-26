@@ -43,12 +43,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         displayMetrics.setTo(resources.displayMetrics)
         handler = Handler(Looper.getMainLooper())
-        backgroundManager = BackgroundManager.getInstance(requireActivity()).apply {
-            if (!isAttached) {
-                attach(requireActivity().window)
-            }
-        }
-
+        backgroundManager = BackgroundManager.getInstance(requireActivity())
         onItemViewClickedListener = this
 
         // Get the video data.

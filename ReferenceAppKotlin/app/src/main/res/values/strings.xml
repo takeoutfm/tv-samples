@@ -40,8 +40,11 @@
     <string name="sign_in_intro">Without any changes, this app uses local authorization (MockAuthClient). You can log in using "%1$s" as the email and any non-empty string as the password. To update the app to use remote auth, see the RemoteAuthClient class.</string>
 
     <!-- Channel strings -->
-    <string name="default_home_screen_channel_name">Example Channel</string>
-    <string name="default_home_screen_channel_description">An example of a default home screen channel</string>
+    <string name="new_channel_name">New Releases</string>
+    <string name="new_channel_description">Movies recently released</string>
+
+    <string name="added_channel_name">Recently Added</string>
+    <string name="added_channel_description">Movies recently added</string>
 
     <!-- Content types -->
     <string name="content_type_season_episode">Season %s Episode %s</string>

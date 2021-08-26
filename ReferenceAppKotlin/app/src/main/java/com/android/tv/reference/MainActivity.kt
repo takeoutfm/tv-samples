@@ -19,10 +19,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
+import androidx.leanback.app.BackgroundManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph
 import androidx.navigation.fragment.NavHostFragment
+import com.android.tv.reference.browse.BrowseFragment
 import com.android.tv.reference.browse.BrowseFragmentDirections
 import com.android.tv.reference.castconnect.CastHelper
 import com.android.tv.reference.deeplink.DeepLinkViewModel
@@ -38,15 +40,27 @@ import timber.log.Timber
  */
 class MainActivity : FragmentActivity() {
 
+    companion object {
+        private const val BACKGROUND_RESOURCE_ID = R.drawable.image_placeholder
+    }
+
     private lateinit var navGraph: NavGraph
     private lateinit var navController: NavController
     private lateinit var viewModel: DeepLinkViewModel
     private lateinit var castHelper: CastHelper
+    private lateinit var backgroundManager: BackgroundManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
+
+        backgroundManager = BackgroundManager.getInstance(this).apply {
+            if (!isAttached) {
+                attach(window)
+            }
+            setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
+        }
 
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -90,13 +104,14 @@ class MainActivity : FragmentActivity() {
                         val video = result.data
                         Timber.d("Loaded '${video.name}' for deep link '$uri'")
 
-                        loadPlaybackFragment(video)
+//                        loadPlaybackFragment(video)
+                        loadDetailsFragment(video)
                     }
                     is Result.Error -> {
                         // Here you might show an error to the user or automatically trigger a search
                         // for content that might match the deep link; since this is just a demo app,
                         // the error is logged and then the app starts normally
-                        Timber.w("Failed to load deep link $uri, ignoring", result.exception)
+                        Timber.w(result.exception, "Failed to load deep link $uri, ignoring")
                         loadStartingPage()
                     }
                 }
@@ -144,6 +159,16 @@ class MainActivity : FragmentActivity() {
         navController.graph = navGraph
         navController.navigate(
             BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(
+                video
+            )
+        )
+    }
+
+    private fun loadDetailsFragment(video: Video) {
+        // Set the default graph and go to details for the loaded Video
+        navController.graph = navGraph
+        navController.navigate(
+            BrowseFragmentDirections.actionBrowseFragmentToDetailsFragment(
                 video
             )
         )

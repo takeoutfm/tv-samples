@@ -62,9 +62,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
 
-                <data android:host="atv-reference-app.firebaseapp.com" />
-                <data android:scheme="https" />
-                <data android:pathPattern=".*" />
+                <data android:scheme="takeout" />
             </intent-filter>
 
             <intent-filter>

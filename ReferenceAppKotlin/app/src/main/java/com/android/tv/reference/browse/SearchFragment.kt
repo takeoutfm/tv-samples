@@ -15,7 +15,6 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
 
     companion object {
         private const val SEARCH_DELAY_MILLIS = 500L
-        private const val BACKGROUND_RESOURCE_ID = R.drawable.image_placeholder
 
         // check for things like:
         //   title:"text text" or cast:text*
@@ -36,13 +35,7 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
         super.onCreate(savedInstanceState)
         rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
         handler = Handler(Looper.getMainLooper())
-
-        backgroundManager = BackgroundManager.getInstance(requireActivity()).apply {
-            if (!isAttached) {
-                attach(requireActivity().window)
-            }
-            setThemeDrawableResourceId(BACKGROUND_RESOURCE_ID)
-        }
+        backgroundManager = BackgroundManager.getInstance(requireActivity())
 
         setSearchResultProvider(this)
 

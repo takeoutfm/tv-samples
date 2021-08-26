@@ -9,6 +9,6 @@ class Person(
     val name: String,
     val bio: String,
     val birthplace: String,
-    val birthday: String,
+    val birthday: Int,
     val thumbnailUri: String,
 ) : Parcelable

@@ -56,6 +56,8 @@ class HomeScreenChannelWorker(private val context: Context, params: WorkerParame
         val setOfProgramIdsToExclude = HashSet<String>()
         var programsToAdd = DEFAULT_CHANNEL_SIZE
 
+//       channelHelper.cleanup()
+
         // Get or create the default channel
         val defaultChannel = channelHelper.getDefaultChannel()?.also {
             val programIdsInChannel = channelHelper.getProgramIdsInChannel(context, it.id)
