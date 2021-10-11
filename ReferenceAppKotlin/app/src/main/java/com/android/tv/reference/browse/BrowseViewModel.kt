@@ -38,14 +38,25 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     val isSignedIn = Transformations.map(userManager.userInfo) { it != null }
 
     init {
-        refresh()
+        viewModelScope.launch {
+            Timber.d("refresh ${userManager.userInfo.value}")
+            Timber.d("refresh $videoRepository")
+            asyncRefresh()
+        }
     }
 
     fun refresh() {
-        browseContent.value = getVideoGroupList(videoRepository)
+        viewModelScope.launch {
+            asyncRefresh()
+        }
     }
 
-    fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
+    private suspend fun asyncRefresh() {
+        val list = getVideoGroupList(videoRepository)
+        browseContent.value = list
+    }
+
+    suspend fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
         val videosByCategory = repository.getAllVideos().groupBy { it.category }
         val videoGroupList = mutableListOf<VideoGroup>()
         val context = getApplication<TvReferenceApplication>()

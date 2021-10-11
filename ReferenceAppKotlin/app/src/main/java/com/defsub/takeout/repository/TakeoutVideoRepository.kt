@@ -27,7 +27,7 @@ import com.defsub.takeout.client.Client
 import com.defsub.takeout.client.Movie
 import com.defsub.takeout.client.location
 import com.defsub.takeout.client.year
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import timber.log.Timber
 
 /**
@@ -41,6 +41,11 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private var allVideos = mutableListOf<Video>()
     private var newVideos = mutableListOf<Video>()
     private var addedVideos = mutableListOf<Video>()
+
+    private suspend fun signOut() {
+        val userManager = UserManager.getInstance(application.applicationContext)
+        userManager.signOut()
+    }
 
     private fun checkSignedIn(): Boolean {
         val userManager = UserManager.getInstance(application.applicationContext)
@@ -63,15 +68,17 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return signedIn
     }
 
-    private fun load() {
+    private suspend fun load() {
+        Timber.d("loading...")
         if (!checkSignedIn()) return
 
         if (allVideos.isNotEmpty()) {
+            Timber.d("already loaded")
             return
         }
 
-        runBlocking {
-            val videos = mutableListOf<Video>()
+        val videos = mutableListOf<Video>()
+        try {
             val movies = client!!.movies(0)
             for (m in movies.movies) {
                 videos.add(toVideo(m))
@@ -79,6 +86,9 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             allVideos.addAll(videos)
             // also load home for new and added
             home()
+        } catch (e: Exception) {
+            Timber.e(e)
+            signOut()
         }
     }
 
@@ -94,17 +104,17 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         }
     }
 
-    override fun getNewReleases(): List<Video> {
+    override suspend fun getNewReleases(): List<Video> {
         load()
         return newVideos
     }
 
-    override fun getRecentlyAdded(): List<Video> {
+    override suspend fun getRecentlyAdded(): List<Video> {
         load()
         return addedVideos
     }
 
-    override fun getAllVideos(): List<Video> {
+    override suspend fun getAllVideos(): List<Video> {
         load()
         return allVideos
     }
@@ -117,52 +127,41 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     // takeout://movies/$id
-    override fun getVideoDetail(id: String): Detail? {
+    override suspend fun getVideoDetail(id: String): Detail? {
         if (!checkSignedIn()) return null
         var detail: Detail? = null
-        runBlocking {
-            val view = client!!.movie(getId(id), 0)
-            detail = toDetail(view)
-        }
+        val view = client!!.movie(getId(id), 0)
+        detail = toDetail(view)
         return detail
     }
 
-    override fun getProfile(id: String): Profile? {
+    override suspend fun getProfile(id: String): Profile? {
         if (!checkSignedIn()) return null
         var profile: Profile? = null
-        runBlocking {
-            val view = client!!.profile(getId(id), 0)
-            profile = toProfile(view)
-        }
+        val view = client!!.profile(getId(id), 0)
+        profile = toProfile(view)
         return profile
     }
 
-    override fun search(query: String): List<Video> {
+    override suspend fun search(query: String): List<Video> {
         if (!checkSignedIn()) return emptyList()
         val results: List<Video>
-        runBlocking {
-            val result = client!!.search(query)
-            results = result.movies?.map { toVideo(it) } ?: emptyList()
-        }
+        val result = client!!.search(query)
+        results = result.movies?.map { toVideo(it) } ?: emptyList()
         return results
     }
 
     override fun getVideoById(id: String): Video? {
-        for (v in getAllVideos()) {
-            if (v.id == id) {
-                return v
-            }
-        }
-        return null
+        return allVideos.firstOrNull { it.id == id }
     }
 
     override fun getVideoByVideoUri(uri: String): Video? {
-        return getAllVideos()
+        return allVideos
             .firstOrNull { it.videoUri == uri }
     }
 
     override fun getAllVideosFromSeries(seriesUri: String): List<Video> {
-        return getAllVideos().filter { it.seriesUri == seriesUri }
+        return allVideos.filter { it.seriesUri == seriesUri }
     }
 
     private fun toProfile(p: com.defsub.takeout.client.ProfileView): Profile {

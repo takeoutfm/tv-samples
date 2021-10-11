@@ -10,6 +10,9 @@ import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.defsub.takeout.tv.R
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.coroutineContext
 
 class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResultProvider {
 
@@ -83,16 +86,16 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
     }
 
     private fun searchImmediate() {
-        var pattern = searchQuery
-        if (!pattern.contains(SPECIAL_CHARS)) {
-            pattern = "title:$pattern* cast:$pattern* genre:$pattern* directing:$pattern* writing:$pattern*"
+        runBlocking {
+            var pattern = searchQuery
+            if (!pattern.contains(SPECIAL_CHARS)) {
+                pattern = "title:\"$pattern*\" cast:\"$pattern*\" genre:\"$pattern*\" directing:\"$pattern*\" writing:\"$pattern*\""
+            }
+            val videos = VideoRepositoryFactory.getVideoRepository().search(pattern) ?: emptyList()
+            rowsAdapter.clear()
+            val listRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
+            listRowAdapter.addAll(0, videos)
+            rowsAdapter.add(ListRow(listRowAdapter))
         }
-
-        val videos = VideoRepositoryFactory.getVideoRepository().search(pattern) ?: emptyList()
-
-        rowsAdapter.clear()
-        val listRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
-        listRowAdapter.addAll(0, videos)
-        rowsAdapter.add(ListRow(listRowAdapter))
     }
 }

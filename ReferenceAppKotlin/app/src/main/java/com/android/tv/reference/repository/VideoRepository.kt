@@ -31,12 +31,12 @@ interface VideoRepository {
      * Return all videos available from a specific source.
      * @return List<Video>
      */
-    fun getAllVideos(): List<Video>
-    fun getNewReleases(): List<Video>
-    fun getRecentlyAdded(): List<Video>
-    fun getVideoDetail(id: String): Detail?
-    fun getProfile(id: String): Profile?
-    fun search(query: String): List<Video>
+    suspend fun getAllVideos(): List<Video>
+    suspend fun getNewReleases(): List<Video>
+    suspend fun getRecentlyAdded(): List<Video>
+    suspend fun getVideoDetail(id: String): Detail?
+    suspend fun getProfile(id: String): Profile?
+    suspend fun search(query: String): List<Video>
 
     /**
      * Returns a Video for the passed [id] or null if there is no matching video.

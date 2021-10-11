@@ -168,10 +168,11 @@ class PlaybackFragment : VideoSupportFragment() {
             .setPreferredTextLanguage("en")
             .setMaxAudioChannelCount(6) // 5.1
             .setPreferredAudioMimeTypes(
-                "audio/true-hd",
-                "audio/vnd.dts.hd",
-                "audio/vnd.dts",
-                "audio/ac3",
+// temp fix for Bravia picking AC3 which are director commentary! See Civil War.
+//                "audio/true-hd",
+//                "audio/vnd.dts.hd",
+//                "audio/vnd.dts",
+//                "audio/ac3",
                 "audio/mp4a-latm"
             )
             .setPreferredTextLanguageAndRoleFlagsToCaptioningManagerSettings(requireContext())

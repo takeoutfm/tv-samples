@@ -23,6 +23,8 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import timber.log.Timber
+import java.net.URLEncoder
 
 class Client(private val endpoint: String = defaultEndpoint,
              private var cookie: String? = null) {
@@ -53,6 +55,7 @@ class Client(private val endpoint: String = defaultEndpoint,
     }
 
     private suspend inline fun <reified T> get(uri: String, ttl: Int? = 0): T {
+        Timber.d("get $endpoint$uri")
         return client.get("$endpoint$uri") {
             accept(ContentType.Application.Json)
                 cookie?.let { header(HttpHeaders.Cookie, "Takeout=$cookie") }
@@ -151,7 +154,8 @@ class Client(private val endpoint: String = defaultEndpoint,
     }
 
     suspend fun search(query: String): SearchView {
-        return get("/api/search?q=$query", 0)
+        val q = URLEncoder.encode(query, "utf-8")
+        return get("/api/search?q=$q", 0)
     }
 
     companion object {

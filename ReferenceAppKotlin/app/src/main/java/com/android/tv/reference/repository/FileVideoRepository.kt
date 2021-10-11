@@ -38,27 +38,27 @@ class FileVideoRepository(override val application: Application) : VideoReposito
         }
     }
 
-    override fun getAllVideos(): List<Video> {
+    override suspend fun getAllVideos(): List<Video> {
         return _allVideos
     }
 
-    override fun getNewReleases(): List<Video> {
+    override suspend fun getNewReleases(): List<Video> {
         TODO("Not yet implemented")
     }
 
-    override fun getRecentlyAdded(): List<Video> {
+    override suspend fun getRecentlyAdded(): List<Video> {
         TODO("Not yet implemented")
     }
 
-    override fun getVideoDetail(id: String): Detail? {
+    override suspend fun getVideoDetail(id: String): Detail? {
         TODO("Not yet implemented")
     }
 
-    override fun getProfile(id: String): Profile? {
+    override suspend fun getProfile(id: String): Profile? {
         TODO("Not yet implemented")
     }
 
-    override fun search(query: String): List<Video> {
+    override suspend fun search(query: String): List<Video> {
         TODO("Not yet implemented")
     }
 
@@ -68,11 +68,11 @@ class FileVideoRepository(override val application: Application) : VideoReposito
     }
 
     override fun getVideoByVideoUri(uri: String): Video? {
-        return getAllVideos()
+        return _allVideos
             .firstOrNull { it.videoUri == uri }
     }
 
     override fun getAllVideosFromSeries(seriesUri: String): List<Video> {
-        return getAllVideos().filter { it.seriesUri == seriesUri }
+        return _allVideos.filter { it.seriesUri == seriesUri }
     }
 }

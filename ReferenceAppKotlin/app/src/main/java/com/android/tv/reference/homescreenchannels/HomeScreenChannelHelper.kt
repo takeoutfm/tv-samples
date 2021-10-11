@@ -32,6 +32,7 @@ import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
 import com.defsub.takeout.tv.R
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 /**
@@ -78,7 +79,11 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
         countToAdd: Int
     ): List<Video> {
         val videoRepository = VideoRepositoryFactory.getVideoRepository()
-        return videoRepository.getRecentlyAdded()
+        val recent: List<Video>
+        runBlocking {
+            recent = videoRepository.getRecentlyAdded()
+        }
+        return recent
 //            .shuffled() // Mix the videos to avoid getting all of one type
 //            .filterNot { excludedIds.contains(it.id) } // Exclude videos already in the channel
 //            .take(countToAdd) // Take only as many as needed to fill the channel
