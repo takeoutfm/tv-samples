@@ -236,11 +236,18 @@ data class Collection(
 )
 
 @Serializable
+data class Recommend(
+    @SerialName("Name") val name: String,
+    @SerialName("Movies") val movies: List<Movie>,
+)
+
+@Serializable
 data class HomeView(
     @SerialName("AddedReleases") val added: List<Release>,
     @SerialName("NewReleases") val released: List<Release>,
     @SerialName("AddedMovies") val addedMovies: List<Movie>,
-    @SerialName("NewMovies") val newMovies: List<Movie>
+    @SerialName("NewMovies") val newMovies: List<Movie>,
+    @SerialName("RecommendMovies") val recommendMovies: List<Recommend>,
 )
 
 @Serializable

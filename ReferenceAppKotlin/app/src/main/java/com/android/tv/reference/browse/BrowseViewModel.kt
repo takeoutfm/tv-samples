@@ -60,11 +60,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
         val videosByCategory = repository.getAllVideos().groupBy { it.category }
         val videoGroupList = mutableListOf<VideoGroup>()
         val context = getApplication<TvReferenceApplication>()
-        videoGroupList.add(VideoGroup(
-            context.getString(R.string.new_releases),
-            repository.getNewReleases()))
-        videoGroupList.add(VideoGroup(context.getString(R.string.recently_added),
-            repository.getRecentlyAdded()))
+        videoGroupList.addAll(repository.getHomeGroups())
         videosByCategory.forEach { (k, v) ->
             videoGroupList.add(VideoGroup(k, v))
         }

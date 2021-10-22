@@ -19,6 +19,7 @@ import android.app.Application
 import com.android.tv.reference.shared.datamodel.Detail
 import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
+import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.defsub.takeout.tv.R
 
 /**
@@ -42,11 +43,7 @@ class FileVideoRepository(override val application: Application) : VideoReposito
         return _allVideos
     }
 
-    override suspend fun getNewReleases(): List<Video> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getRecentlyAdded(): List<Video> {
+    override suspend fun getHomeGroups(): List<VideoGroup> {
         TODO("Not yet implemented")
     }
 

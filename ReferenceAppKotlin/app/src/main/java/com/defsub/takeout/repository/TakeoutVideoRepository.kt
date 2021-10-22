@@ -41,6 +41,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private var allVideos = mutableListOf<Video>()
     private var newVideos = mutableListOf<Video>()
     private var addedVideos = mutableListOf<Video>()
+    private var recommendVideos = mutableListOf<VideoGroup>()
 
     private suspend fun signOut() {
         val userManager = UserManager.getInstance(application.applicationContext)
@@ -96,22 +97,32 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         val view = client!!.home(0)
         newVideos.clear()
         addedVideos.clear()
+        recommendVideos.clear()
         view.newMovies.forEach {
             newVideos.add(toVideo(it))
         }
         view.addedMovies.forEach {
             addedVideos.add(toVideo(it))
         }
+        view.recommendMovies.forEach { recommend ->
+            val videos = recommend.movies.map { m -> toVideo(m) }
+            recommendVideos.add(VideoGroup(category = recommend.name, videoList = videos))
+        }
     }
 
-    override suspend fun getNewReleases(): List<Video> {
+    override suspend fun getHomeGroups(): List<VideoGroup> {
         load()
-        return newVideos
-    }
-
-    override suspend fun getRecentlyAdded(): List<Video> {
-        load()
-        return addedVideos
+        val groups = mutableListOf<VideoGroup>()
+        if (recommendVideos.isNotEmpty()) {
+            groups.addAll(recommendVideos)
+        }
+        if (newVideos.isNotEmpty()) {
+            groups.add(VideoGroup(category = "New Releases", newVideos))
+        }
+        if (addedVideos.isNotEmpty()) {
+            groups.add(VideoGroup(category = "Recently Added", addedVideos))
+        }
+        return groups
     }
 
     override suspend fun getAllVideos(): List<Video> {

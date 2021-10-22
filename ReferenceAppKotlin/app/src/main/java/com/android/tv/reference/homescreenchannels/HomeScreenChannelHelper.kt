@@ -79,11 +79,13 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
         countToAdd: Int
     ): List<Video> {
         val videoRepository = VideoRepositoryFactory.getVideoRepository()
-        val recent: List<Video>
+        val videos: List<Video>
         runBlocking {
-            recent = videoRepository.getRecentlyAdded()
+            val groups = videoRepository.getHomeGroups()
+            val group = groups.find { it.category == "Recently Added" }
+            videos = group?.videoList ?: emptyList()
         }
-        return recent
+        return videos
 //            .shuffled() // Mix the videos to avoid getting all of one type
 //            .filterNot { excludedIds.contains(it.id) } // Exclude videos already in the channel
 //            .take(countToAdd) // Take only as many as needed to fill the channel

@@ -16,10 +16,7 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
-import com.android.tv.reference.shared.datamodel.Detail
-import com.android.tv.reference.shared.datamodel.Profile
-import com.android.tv.reference.shared.datamodel.Video
-import com.android.tv.reference.shared.datamodel.VideoType
+import com.android.tv.reference.shared.datamodel.*
 
 /**
  * Interface to define methods to interact with different data sources.
@@ -32,8 +29,7 @@ interface VideoRepository {
      * @return List<Video>
      */
     suspend fun getAllVideos(): List<Video>
-    suspend fun getNewReleases(): List<Video>
-    suspend fun getRecentlyAdded(): List<Video>
+    suspend fun getHomeGroups(): List<VideoGroup>
     suspend fun getVideoDetail(id: String): Detail?
     suspend fun getProfile(id: String): Profile?
     suspend fun search(query: String): List<Video>
