@@ -16,6 +16,7 @@
 package com.android.tv.reference.browse
 
 import android.app.Application
+import androidx.leanback.app.ProgressBarManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
@@ -37,14 +38,6 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     val customMenuItems = MutableLiveData<List<BrowseCustomMenu>>(listOf())
     val isSignedIn = Transformations.map(userManager.userInfo) { it != null }
 
-    init {
-        viewModelScope.launch {
-            Timber.d("refresh ${userManager.userInfo.value}")
-            Timber.d("refresh $videoRepository")
-            asyncRefresh()
-        }
-    }
-
     fun refresh() {
         viewModelScope.launch {
             asyncRefresh()
@@ -59,7 +52,6 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
         val videosByCategory = repository.getAllVideos().groupBy { it.category }
         val videoGroupList = mutableListOf<VideoGroup>()
-        val context = getApplication<TvReferenceApplication>()
         videoGroupList.addAll(repository.getHomeGroups())
         videosByCategory.forEach { (k, v) ->
             videoGroupList.add(VideoGroup(k, v))

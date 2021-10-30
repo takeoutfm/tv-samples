@@ -65,6 +65,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             allVideos.clear()
             newVideos.clear()
             addedVideos.clear()
+            recommendVideos.clear()
         }
         return signedIn
     }
@@ -78,13 +79,12 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             return
         }
 
-        val videos = mutableListOf<Video>()
         try {
+            Timber.d("loading movies")
             val movies = client!!.movies(0)
-            for (m in movies.movies) {
-                videos.add(toVideo(m))
-            }
-            allVideos.addAll(videos)
+            allVideos.clear()
+            allVideos.addAll(movies.movies.map { toVideo(it) })
+            Timber.d("loading movies..done")
             // also load home for new and added
             home()
         } catch (e: Exception) {

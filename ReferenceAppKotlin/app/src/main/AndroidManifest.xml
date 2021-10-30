@@ -46,6 +46,7 @@
         android:theme="@style/AppTheme">
 
         <activity
+            android:exported="true"
             android:name="com.android.tv.reference.MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation">
 

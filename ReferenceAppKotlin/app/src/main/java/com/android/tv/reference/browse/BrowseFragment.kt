@@ -22,8 +22,10 @@ import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.View
+import android.view.ViewGroup
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
+import androidx.leanback.app.ProgressBarManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
@@ -81,6 +83,9 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         val signOutMenuItem = BrowseCustomMenu.MenuItem(getString(R.string.sign_out)) {
             viewModel.signOut()
         }
+        val refreshMenuItem = BrowseCustomMenu.MenuItem(getString(R.string.refresh)) {
+            viewModel.refresh()
+        }
 
         viewModel = ViewModelProvider(this).get(BrowseViewModel::class.java)
         viewModel.browseContent.observe(
@@ -98,20 +103,18 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         viewModel.isSignedIn.observe(
             this,
             {
-                viewModel.customMenuItems.postValue(
-                    listOf(
-                        BrowseCustomMenu(
-                            getString(R.string.menu_identity),
-                            listOf(
-                                if (it) {
-                                    signOutMenuItem
-                                } else {
-                                    signInMenuItem
-                                }
-                            )
-                        )
-                    )
+                val settings = mutableListOf(
+                    if (it) {
+                        signOutMenuItem
+                    } else {
+                        signInMenuItem
+                    }
                 )
+                if (it) {
+                    settings.add(refreshMenuItem)
+                }
+                viewModel.customMenuItems.postValue(
+                    listOf(BrowseCustomMenu(getString(R.string.settings), settings)))
                 viewModel.refresh()
             }
         )

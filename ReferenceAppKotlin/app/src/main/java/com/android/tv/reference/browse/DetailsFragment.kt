@@ -6,31 +6,44 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
+import android.view.View
+import androidx.fragment.app.viewModels
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.DetailsSupportFragment
 import androidx.leanback.widget.*
+import androidx.lifecycle.Observer
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.fragment.findNavController
+import com.android.tv.reference.playback.PlaybackViewModel
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
+import com.android.tv.reference.shared.watchprogress.WatchProgress
+import com.android.tv.reference.shared.watchprogress.WatchProgressDao
+import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
+import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
 import com.defsub.takeout.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListener {
     companion object {
         private const val PLAY_ACTION = 1L
         private const val CAST_ACTION = 2L
+        private const val RESUME_ACTION = 3L
     }
 
     private lateinit var video: Video
     private lateinit var detailsOverview: DetailsOverviewRow
     private lateinit var backgroundManager: BackgroundManager
     private lateinit var handler: Handler
+    private lateinit var watchProgressRepository: WatchProgressRepository
 
     private val displayMetrics = DisplayMetrics()
     private var backgroundUri: String = ""
@@ -45,6 +58,8 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         handler = Handler(Looper.getMainLooper())
         backgroundManager = BackgroundManager.getInstance(requireActivity())
         onItemViewClickedListener = this
+
+        watchProgressRepository = WatchProgressRepository(WatchProgressDatabase.getDatabase(requireContext()).watchProgressDao())
 
         // Get the video data.
         video = DetailsFragmentArgs.fromBundle(requireArguments()).video
@@ -71,32 +86,25 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         detailsOverview = DetailsOverviewRow(video)
         mRowsAdapter.add(detailsOverview)
 
-        val actionsAdapter = ArrayObjectAdapter()
-        val playAction = Action(PLAY_ACTION, getString(R.string.header_play))
-        val castAction = Action(CAST_ACTION, getString(R.string.header_cast))
-        actionsAdapter.add(playAction)
-        actionsAdapter.add(castAction)
-        detailsOverview.actionsAdapter = actionsAdapter
-
-        // Setup related row.
-        val castRowAdapter = ArrayObjectAdapter(CastCardPresenter())
-        var header = HeaderItem(0, getString(R.string.header_cast))
-        mRowsAdapter.add(ListRow(header, castRowAdapter))
-
-        // Setup recommended row.
-        val relatedRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
-        header = HeaderItem(1, getString(R.string.header_recommended))
-        mRowsAdapter.add(ListRow(header, relatedRowAdapter))
-
         runBlocking {
             withContext(Dispatchers.IO) {
                 val detail = VideoRepositoryFactory.getVideoRepository().getVideoDetail(video.id)
-                if (detail != null) {
-                    detail.cast.forEach {
-                        castRowAdapter.add(it)
+                detail?.let {
+                    if (detail.cast.isNotEmpty()) {
+                        val header = HeaderItem(0, getString(R.string.header_cast))
+                        val castRowAdapter = ArrayObjectAdapter(CastCardPresenter())
+                        mRowsAdapter.add(ListRow(header, castRowAdapter))
+                        detail.cast.forEach {
+                            castRowAdapter.add(it)
+                        }
                     }
-                    detail.related.forEach {
-                        relatedRowAdapter.add(it)
+                    if (detail.related.isNotEmpty()) {
+                        val header = HeaderItem(1, getString(R.string.header_recommended))
+                        val relatedRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
+                        mRowsAdapter.add(ListRow(header, relatedRowAdapter))
+                        detail.related.forEach {
+                            relatedRowAdapter.add(it)
+                        }
                     }
                 }
             }
@@ -113,6 +121,31 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         super.onResume()
         backgroundUri = ""
         updateBackgroundDelayed(video)
+
+        // provide actions based on current video progress state
+
+        val actionsAdapter = ArrayObjectAdapter()
+        val resumeAction = Action(RESUME_ACTION, getString(R.string.header_resume))
+        val playAction = Action(PLAY_ACTION, getString(R.string.header_play))
+        val castAction = Action(CAST_ACTION, getString(R.string.header_cast))
+
+        // add resume if there's existing watch progress
+        val progress = watchProgressRepository.getWatchProgressByVideoId(video.id)
+        progress.observe(this) {
+            progress.removeObservers(this)
+            if (it != null) {
+                // TODO need duration from Takeout, will get stuck at end
+                if (!video.isAfterEndCreditsPosition(it.startPosition)) {
+                    Timber.d("got ${video.id} progress ${it.startPosition} for ${it.videoId}")
+                    actionsAdapter.add(resumeAction)
+                }
+            } else {
+                Timber.d("no progress for ${video.id}")
+            }
+            actionsAdapter.add(playAction)
+            actionsAdapter.add(castAction)
+        }
+        detailsOverview.actionsAdapter = actionsAdapter
     }
 
     private fun updateBackgroundDelayed(video: Video) {
@@ -185,10 +218,18 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         if (item is Action) {
             when (item.id) {
-                CAST_ACTION -> setSelectedPosition(1)
-                PLAY_ACTION -> findNavController().navigate(
+                RESUME_ACTION -> findNavController().navigate(
                     DetailsFragmentDirections.actionDetailsFragmentToPlaybackFragment(video)
                 )
+                PLAY_ACTION -> {
+                    runBlocking {
+                        // TODO quick fix to clear any watch progress
+                        watchProgressRepository.insert(WatchProgress(video.id, 0))
+                    }
+                    findNavController().navigate(
+                            DetailsFragmentDirections.actionDetailsFragmentToPlaybackFragment(video))
+                }
+                CAST_ACTION -> setSelectedPosition(1)
             }
         }
     }

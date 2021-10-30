@@ -24,7 +24,12 @@ import com.defsub.takeout.client.Client
  */
 interface AuthClient {
     suspend fun validateToken(token: String): Result<UserInfo>
-    suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<UserInfo>
+    suspend fun authWithPassword(
+        endpoint: String,
+        username: String,
+        password: String
+    ): Result<UserInfo>
+
     suspend fun authWithGoogleIdToken(idToken: String): Result<UserInfo>
     suspend fun invalidateToken(token: String): Result<Unit>
 }
@@ -42,7 +47,11 @@ class TakeoutAuthClient : AuthClient {
         return Result.Error(AuthClientError.AuthenticationError)
     }
 
-    override suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<UserInfo> {
+    override suspend fun authWithPassword(
+        endpoint: String,
+        username: String,
+        password: String
+    ): Result<UserInfo> {
         val client = Client(endpoint)
         val cookie = client.login(username, password)
         if (cookie != null) {

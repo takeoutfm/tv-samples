@@ -47,7 +47,7 @@
     <string name="added_channel_description">Movies recently added</string>
 
     <!-- Content types -->
-    <string name="content_type_season_episode">Season %s Episode %s</string>
+    <string name="content_type_season_episode" formatted="false">Season %s Episode %s</string>
     <string name="content_type_movie">Movie</string>
     <string name="content_type_clip">Clip</string>
 
@@ -64,7 +64,11 @@
     <string name="recently_added">Recently Added</string>
 
     <string name="header_movies">Movies</string>
+    <string name="header_resume">Resume</string>
     <string name="header_play">Play</string>
     <string name="header_cast">Cast</string>
     <string name="header_recommended">Related</string>
+
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
 </resources>

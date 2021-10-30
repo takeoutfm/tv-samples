@@ -312,9 +312,11 @@ class PlaybackFragment : VideoSupportFragment() {
                             "audio/ac3" -> "AC3"
                             else -> "${x.sampleMimeType}"
                         }
-                    } else if (sampleMimeType.startsWith("application/pgs") ||
-                        sampleMimeType.startsWith("application/x-subrip") // vobsub?
-                    ) {
+                    } else if (
+                        // "application/vobsub" not supported by exoplayer
+                        sampleMimeType.startsWith("application/pgs") ||
+                        sampleMimeType.startsWith("application/x-subrip") ||
+                        sampleMimeType.startsWith("text/x-ssa")) {
                         sub = Locale(x.language!!).displayName
                     } else if (sampleMimeType.startsWith("video/")) {
                         vid = when (x.sampleMimeType) {
@@ -339,6 +341,8 @@ class PlaybackFragment : VideoSupportFragment() {
                             height in 2161..4320 -> "8K"
                             else -> "$height"
                         }
+                    } else {
+                        Timber.d("XXX $sampleMimeType")
                     }
                 }
             }
