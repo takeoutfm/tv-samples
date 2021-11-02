@@ -247,7 +247,7 @@ data class HomeView(
     @SerialName("NewReleases") val released: List<Release>,
     @SerialName("AddedMovies") val addedMovies: List<Movie>,
     @SerialName("NewMovies") val newMovies: List<Movie>,
-    @SerialName("RecommendMovies") val recommendMovies: List<Recommend>,
+    @SerialName("RecommendMovies") val recommendMovies: List<Recommend>?,
 )
 
 @Serializable

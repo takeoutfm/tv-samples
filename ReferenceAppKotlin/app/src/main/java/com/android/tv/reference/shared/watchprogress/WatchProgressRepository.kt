@@ -32,8 +32,16 @@ class WatchProgressRepository(private val watchProgressDao: WatchProgressDao) {
         return watchProgressDao.getWatchProgressByVideoId(videoId)
     }
 
+    fun getRecent(): LiveData<List<WatchProgress>> {
+        return watchProgressDao.getRecentWatchProgress()
+    }
+
     suspend fun insert(watchProgress: WatchProgress) {
-        watchProgressDao.insert(watchProgress)
+        watchProgressDao.insertWithTimestamp(watchProgress)
+    }
+
+    suspend fun deleteWatchProgress(videoId: String) {
+        watchProgressDao.deleteWatchProgress(videoId)
     }
 
     suspend fun deleteAll() {

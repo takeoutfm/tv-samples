@@ -89,7 +89,7 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
         runBlocking {
             var pattern = searchQuery
             if (!pattern.contains(SPECIAL_CHARS)) {
-                pattern = "title:\"$pattern*\" cast:\"$pattern*\" genre:\"$pattern*\" directing:\"$pattern*\" writing:\"$pattern*\""
+                pattern = "title:\"$pattern*\" cast:\"$pattern*\" directing:\"$pattern*\" writing:\"$pattern*\" genre:\"$pattern\" keyword:\"$pattern\""
             }
             val videos = VideoRepositoryFactory.getVideoRepository().search(pattern) ?: emptyList()
             rowsAdapter.clear()

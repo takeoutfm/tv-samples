@@ -39,7 +39,7 @@ class FileVideoRepository(override val application: Application) : VideoReposito
         }
     }
 
-    override suspend fun getAllVideos(): List<Video> {
+    override suspend fun getAllVideos(refresh: Boolean): List<Video> {
         return _allVideos
     }
 

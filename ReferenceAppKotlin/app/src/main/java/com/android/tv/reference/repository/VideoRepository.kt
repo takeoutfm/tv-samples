@@ -28,7 +28,7 @@ interface VideoRepository {
      * Return all videos available from a specific source.
      * @return List<Video>
      */
-    suspend fun getAllVideos(): List<Video>
+    suspend fun getAllVideos(refresh: Boolean = false): List<Video>
     suspend fun getHomeGroups(): List<VideoGroup>
     suspend fun getVideoDetail(id: String): Detail?
     suspend fun getProfile(id: String): Profile?

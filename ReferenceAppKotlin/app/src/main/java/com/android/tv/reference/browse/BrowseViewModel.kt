@@ -17,15 +17,15 @@ package com.android.tv.reference.browse
 
 import android.app.Application
 import androidx.leanback.app.ProgressBarManager
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.android.tv.reference.TvReferenceApplication
 import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.VideoGroup
+import com.android.tv.reference.shared.watchprogress.WatchProgress
+import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
+import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
 import com.defsub.takeout.tv.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,9 +34,11 @@ import timber.log.Timber
 class BrowseViewModel(application: Application) : AndroidViewModel(application) {
     private val videoRepository = VideoRepositoryFactory.getVideoRepository()
     private val userManager = UserManager.getInstance(application.applicationContext)
+    private val watchProgressDatabase = WatchProgressDatabase.getDatabase(application)
     val browseContent = MutableLiveData<List<VideoGroup>>()
     val customMenuItems = MutableLiveData<List<BrowseCustomMenu>>(listOf())
     val isSignedIn = Transformations.map(userManager.userInfo) { it != null }
+    val watchProgress = watchProgressDatabase.watchProgressDao().getRecentWatchProgress()
 
     fun refresh() {
         viewModelScope.launch {
@@ -50,7 +52,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     suspend fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
-        val videosByCategory = repository.getAllVideos().groupBy { it.category }
+        val videosByCategory = repository.getAllVideos(refresh = true).groupBy { it.category }
         val videoGroupList = mutableListOf<VideoGroup>()
         videoGroupList.addAll(repository.getHomeGroups())
         videosByCategory.forEach { (k, v) ->

@@ -23,7 +23,7 @@ import androidx.room.RoomDatabase
 /**
  * A RoomDatabase class that represents the Sqlite db that stores watch progress
  */
-@Database(entities = [WatchProgress::class], version = 1, exportSchema = false)
+@Database(entities = [WatchProgress::class], version = 2, exportSchema = false)
 abstract class WatchProgressDatabase : RoomDatabase() {
 
     abstract fun watchProgressDao(): WatchProgressDao

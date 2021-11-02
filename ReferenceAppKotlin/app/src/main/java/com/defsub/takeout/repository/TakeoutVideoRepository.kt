@@ -62,12 +62,16 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         } else {
             userInfo = null
             client = null
-            allVideos.clear()
-            newVideos.clear()
-            addedVideos.clear()
-            recommendVideos.clear()
+            clearCache()
         }
         return signedIn
+    }
+
+    private fun clearCache() {
+        allVideos.clear()
+        newVideos.clear()
+        addedVideos.clear()
+        recommendVideos.clear()
     }
 
     private suspend fun load() {
@@ -104,7 +108,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         view.addedMovies.forEach {
             addedVideos.add(toVideo(it))
         }
-        view.recommendMovies.forEach { recommend ->
+        view.recommendMovies?.forEach { recommend ->
             val videos = recommend.movies.map { m -> toVideo(m) }
             recommendVideos.add(VideoGroup(category = recommend.name, videoList = videos))
         }
@@ -125,7 +129,10 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return groups
     }
 
-    override suspend fun getAllVideos(): List<Video> {
+    override suspend fun getAllVideos(refresh: Boolean): List<Video> {
+        if (refresh) {
+            clearCache()
+        }
         load()
         return allVideos
     }

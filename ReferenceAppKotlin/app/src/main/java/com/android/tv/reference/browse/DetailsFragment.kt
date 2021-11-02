@@ -224,7 +224,8 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
                 PLAY_ACTION -> {
                     runBlocking {
                         // TODO quick fix to clear any watch progress
-                        watchProgressRepository.insert(WatchProgress(video.id, 0))
+                        //watchProgressRepository.insert(WatchProgress(video.id, 0))
+                        watchProgressRepository.deleteWatchProgress(video.id)
                     }
                     findNavController().navigate(
                             DetailsFragmentDirections.actionDetailsFragmentToPlaybackFragment(video))

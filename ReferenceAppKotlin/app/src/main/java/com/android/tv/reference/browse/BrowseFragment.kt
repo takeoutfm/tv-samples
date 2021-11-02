@@ -30,11 +30,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
+import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.android.tv.reference.shared.image.BlurImageTransformation
 import com.android.tv.reference.shared.image.OverlayImageTransformation
+import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
+import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
 import com.defsub.takeout.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 /**
@@ -86,18 +90,34 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         val refreshMenuItem = BrowseCustomMenu.MenuItem(getString(R.string.refresh)) {
             viewModel.refresh()
         }
+        val clearProgressItem = BrowseCustomMenu.MenuItem(getString(R.string.clear_watch_progress)) {
+            val watchProgressDatabase = WatchProgressRepository(WatchProgressDatabase.getDatabase(requireContext()).watchProgressDao())
+            runBlocking {
+                watchProgressDatabase.deleteAll()
+            }
+        }
 
         viewModel = ViewModelProvider(this).get(BrowseViewModel::class.java)
+        viewModel.watchProgress.observe(
+            this,
+            {
+                adapter = BrowseAdapter(doWatchProgress(),
+                    viewModel.browseContent.value ?: listOf(),
+                    viewModel.customMenuItems.value ?: listOf())
+            }
+        )
         viewModel.browseContent.observe(
             this,
             {
-                adapter = BrowseAdapter(it, viewModel.customMenuItems.value ?: listOf())
+                adapter = BrowseAdapter(doWatchProgress(), it,
+                    viewModel.customMenuItems.value ?: listOf())
             }
         )
         viewModel.customMenuItems.observe(
             this,
             {
-                adapter = BrowseAdapter(viewModel.browseContent.value ?: listOf(), it)
+                adapter = BrowseAdapter(doWatchProgress(),
+                    viewModel.browseContent.value ?: listOf(), it)
             }
         )
         viewModel.isSignedIn.observe(
@@ -113,6 +133,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
                 if (it) {
                     settings.add(refreshMenuItem)
                 }
+                settings.add(clearProgressItem)
                 viewModel.customMenuItems.postValue(
                     listOf(BrowseCustomMenu(getString(R.string.settings), settings)))
                 viewModel.refresh()
@@ -157,6 +178,16 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             backgroundUri = ""
             updateBackgroundDelayed(selectedVideo!!)
         }
+    }
+
+    private fun doWatchProgress(): VideoGroup {
+        viewModel.watchProgress.value?.let {
+            val videoRepository = VideoRepositoryFactory.getVideoRepository()
+            val videos = it.mapNotNull {
+                    watchProgress -> videoRepository.getVideoById(watchProgress.videoId) }
+            return VideoGroup("Resume Watching", videos)
+        }
+        return VideoGroup("", emptyList())
     }
 
     /**

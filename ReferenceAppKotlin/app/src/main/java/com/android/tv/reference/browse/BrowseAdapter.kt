@@ -22,9 +22,14 @@ import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import com.android.tv.reference.shared.datamodel.VideoGroup
 
-class BrowseAdapter(videoGroup: List<VideoGroup>, customMenus: List<BrowseCustomMenu>) :
+class BrowseAdapter(watchProgress: VideoGroup,
+                    videoGroup: List<VideoGroup>,
+                    customMenus: List<BrowseCustomMenu>) :
     ArrayObjectAdapter(ListRowPresenter()) {
     init {
+        if (watchProgress.videoList.isNotEmpty()) {
+            addVideoGroups(listOf(watchProgress))
+        }
         addVideoGroups(videoGroup)
         add(DividerRow())
         addCustomMenus(customMenus)
