@@ -90,7 +90,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         val refreshMenuItem = BrowseCustomMenu.MenuItem(getString(R.string.refresh)) {
             viewModel.refresh()
         }
-        val clearProgressItem = BrowseCustomMenu.MenuItem(getString(R.string.clear_watch_progress)) {
+        val clearProgressItem = BrowseCustomMenu.MenuItem(getString(R.string.clear_watch_next)) {
             val watchProgressDatabase = WatchProgressRepository(WatchProgressDatabase.getDatabase(requireContext()).watchProgressDao())
             runBlocking {
                 watchProgressDatabase.deleteAll()
@@ -185,7 +185,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             val videoRepository = VideoRepositoryFactory.getVideoRepository()
             val videos = it.mapNotNull {
                     watchProgress -> videoRepository.getVideoById(watchProgress.videoId) }
-            return VideoGroup("Resume Watching", videos)
+            return VideoGroup(getString(R.string.watch_next), videos)
         }
         return VideoGroup("", emptyList())
     }

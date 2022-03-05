@@ -70,6 +70,8 @@
     <string name="header_recommended">Related</string>
 
     <string name="refresh">Refresh</string>
-    <string name="clear_watch_progress">Clear Watching</string>
+    <string name="watch_next">Watch Next</string>
+    <string name="resume_watching">Resume Watching</string>
+    <string name="clear_watch_next">Clear Watch Next</string>
     <string name="settings">Settings</string>
 </resources>

@@ -219,12 +219,22 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
+    private fun category(title: String): String {
+        val ch = title[0]
+        return if (ch.isDigit()) {
+            // all numeric will be category #
+            "#"
+        } else {
+            ch.uppercase();
+        }
+    }
+
     private fun toVideo(m: Movie): Video {
         val userInfo = userInfo!!
         val posterUrl = "http://image.tmdb.org/t/p/w342/${m.posterPath}"
         val backdropUrl = "http://image.tmdb.org/t/p/w1280/${m.backdropPath}"
         val locationUrl = "${userInfo.endpoint}${m.location()}"
-        val category = "${m.sortTitle[0]}"
+        val category = category(m.sortTitle)
         val vote = if (m.voteAverage == null) 0 else (m.voteAverage * 10).toInt()
         val uri = "takeout://movies/${m.id}"
         return Video(

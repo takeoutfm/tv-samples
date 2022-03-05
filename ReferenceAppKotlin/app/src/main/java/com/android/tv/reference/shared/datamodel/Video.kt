@@ -30,13 +30,13 @@ import java.time.Duration
 class Video(
     val id: String,
     val name: String,
-    val description: String,
+    val description: String = "",
     val uri: String,
     val videoUri: String,
     val thumbnailUri: String,
     @Json(name = "backgroundUri") val backgroundImageUri: String,
-    val category: String,
-    val videoType: VideoType,
+    val category: String = "",
+    val videoType: VideoType = VideoType.MOVIE,
     // The duration is specified in the ISO 8601 format as 'PT00H00M'. For more information on the
     // format, refer - https://en.wikipedia.org/wiki/ISO_8601.
     val duration: String = "PT00H00M",
@@ -48,10 +48,10 @@ class Video(
     val episodeNumber: String = "",
     val seasonNumber: String = "",
     val tagline: String = "",
-    val headers: Map<String,String>,
-    val rating: String,
-    val year: Int,
-    val vote: Int,
+    val headers: Map<String,String> = mapOf(),
+    val rating: String = "",
+    val year: Int = -1,
+    val vote: Int = 0,
 ) : Parcelable {
 
     override fun toString(): String {

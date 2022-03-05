@@ -19,6 +19,7 @@ import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.CaptioningManager
 import androidx.fragment.app.viewModels
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.VideoSupportFragment
@@ -27,7 +28,6 @@ import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.castconnect.CastHelper
 import com.android.tv.reference.shared.datamodel.Video
 import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -47,7 +47,7 @@ class PlaybackFragment : VideoSupportFragment() {
     private lateinit var video: Video
 
     private var exoplayer: ExoPlayer? = null
-    private var subtitles: SubtitleView? = null
+    private lateinit var subtitles: SubtitleView
     private lateinit var trackSelector: DefaultTrackSelector
     private val viewModel: PlaybackViewModel by viewModels()
     private lateinit var mediaSession: MediaSessionCompat
@@ -104,6 +104,11 @@ class PlaybackFragment : VideoSupportFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         subtitles = SubtitleView(requireContext())
+        // text/x-ssa doesn't seem to take the user defaults correctly.
+        // Some style elements appear to work
+        subtitles.setUserDefaultStyle()
+        subtitles.setUserDefaultTextSize()
+
         if (view is ViewGroup) {
             val root = view as ViewGroup
             root.addView(subtitles)
@@ -121,7 +126,7 @@ class PlaybackFragment : VideoSupportFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        subtitles = null
+//        subtitles = null
         viewModel.removePlaybackStateListener(uiPlaybackStateListener)
     }
 
@@ -180,12 +185,12 @@ class PlaybackFragment : VideoSupportFragment() {
 
 
         exoplayer =
-            SimpleExoPlayer.Builder(requireContext())
+            ExoPlayer.Builder(requireContext())
                 .setTrackSelector(trackSelector)
                 .build()
                 .apply {
                     setMediaSource(mediaSource)
-                    addTextOutput(subtitles!!)
+                    addListener(subtitles!!)
                     prepare()
                     addListener(PlayerEventListener())
                     glue = prepareGlue(this, this@PlaybackFragment.trackSelector)
@@ -236,19 +241,20 @@ class PlaybackFragment : VideoSupportFragment() {
 
         mediaSessionConnector = MediaSessionConnector(mediaSession).apply {
             setQueueNavigator(SingleVideoQueueNavigator(video, mediaSession))
-            setControlDispatcher(object : DefaultControlDispatcher() {
-                override fun dispatchStop(player: Player, reset: Boolean): Boolean {
-                    // Treat stop commands as pause, this keeps ExoPlayer, MediaSession, etc.
-                    // in memory to allow for quickly resuming. This also maintains the playback
-                    // position so that the user will resume from the current position when backing
-                    // out and returning to this video
-                    Timber.v("Playback stopped at ${player.currentPosition}")
-                    // This both prevents playback from starting automatically and pauses it if
-                    // it's already playing
-                    player.playWhenReady = false
-                    return true
-                }
-            })
+            // not supported in 2.16.0 - is another solution needed?
+//            setControlDispatcher(object : DefaultControlDispatcher() {
+//                override fun dispatchStop(player: Player, reset: Boolean): Boolean {
+//                    // Treat stop commands as pause, this keeps ExoPlayer, MediaSession, etc.
+//                    // in memory to allow for quickly resuming. This also maintains the playback
+//                    // position so that the user will resume from the current position when backing
+//                    // out and returning to this video
+//                    Timber.v("Playback stopped at ${player.currentPosition}")
+//                    // This both prevents playback from starting automatically and pauses it if
+//                    // it's already playing
+//                    player.playWhenReady = false
+//                    return true
+//                }
+//            })
         }
 
         CastHelper.setMediaSessionTokenForCast(
@@ -270,7 +276,7 @@ class PlaybackFragment : VideoSupportFragment() {
         //  episodic content.
     }
 
-    inner class PlayerEventListener : Player.EventListener {
+    inner class PlayerEventListener : Player.Listener {
         override fun onPlayerError(error: PlaybackException) {
             Timber.w(error, "Playback error")
             viewModel.onStateChange(VideoPlaybackState.Error(video, error))
@@ -313,10 +319,11 @@ class PlaybackFragment : VideoSupportFragment() {
                             else -> "${x.sampleMimeType}"
                         }
                     } else if (
-                        // "application/vobsub" not supported by exoplayer
+                    // "application/vobsub" not supported by exoplayer
                         sampleMimeType.startsWith("application/pgs") ||
                         sampleMimeType.startsWith("application/x-subrip") ||
-                        sampleMimeType.startsWith("text/x-ssa")) {
+                        sampleMimeType.startsWith("text/x-ssa")
+                    ) {
                         sub = Locale(x.language!!).displayName
                     } else if (sampleMimeType.startsWith("video/")) {
                         vid = when (x.sampleMimeType) {
