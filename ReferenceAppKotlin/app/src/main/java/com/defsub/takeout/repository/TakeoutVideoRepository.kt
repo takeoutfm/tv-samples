@@ -18,17 +18,17 @@
 package com.defsub.takeout.repository
 
 import android.app.Application
-import android.net.Uri
 import com.android.tv.reference.auth.UserInfo
 import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.shared.datamodel.*
-import com.defsub.takeout.client.Client
-import com.defsub.takeout.client.Movie
-import com.defsub.takeout.client.location
-import com.defsub.takeout.client.year
-import kotlinx.coroutines.*
+import com.android.tv.reference.shared.datamodel.Cast
+import com.android.tv.reference.shared.datamodel.Person
+import com.defsub.takeout.client.*
 import timber.log.Timber
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * VideoRepository implementation to read video data from a file saved on /res/raw
@@ -42,6 +42,8 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private var newVideos = mutableListOf<Video>()
     private var addedVideos = mutableListOf<Video>()
     private var recommendVideos = mutableListOf<VideoGroup>()
+    private var progressMap = mutableMapOf<String, Offset>()
+    private var etags = mutableMapOf<String,Video>()
 
     private suspend fun signOut() {
         val userManager = UserManager.getInstance(application.applicationContext)
@@ -72,6 +74,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         newVideos.clear()
         addedVideos.clear()
         recommendVideos.clear()
+        progressMap.clear()
     }
 
     private suspend fun load() {
@@ -88,9 +91,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             val movies = client!!.movies(0)
             allVideos.clear()
             allVideos.addAll(movies.movies.map { toVideo(it) })
+            etags.clear()
+            allVideos.forEach {
+                etags[it.etag] = it
+            }
             Timber.d("loading movies..done")
             // also load home for new and added
             home()
+            progress()
         } catch (e: Exception) {
             Timber.e(e)
             signOut()
@@ -111,6 +119,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         view.recommendMovies?.forEach { recommend ->
             val videos = recommend.movies.map { m -> toVideo(m) }
             recommendVideos.add(VideoGroup(category = recommend.name, videoList = videos))
+        }
+    }
+
+    private suspend fun progress() {
+        val view = client!!.progress(0)
+        progressMap.clear()
+        view.offsets.forEach {
+            progressMap[it.etag] = it
         }
     }
 
@@ -170,7 +186,8 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     override fun getVideoById(id: String): Video? {
-        return allVideos.firstOrNull { it.id == id }
+        // allow lookup by id or etag
+        return allVideos.firstOrNull { it.id == id } ?: etags[id]
     }
 
     override fun getVideoByVideoUri(uri: String): Video? {
@@ -180,6 +197,54 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     override fun getAllVideosFromSeries(seriesUri: String): List<Video> {
         return allVideos.filter { it.seriesUri == seriesUri }
+    }
+
+    override suspend fun updateProgress(progress: List<Progress>): Int {
+        val client = client!!
+
+        val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        df.timeZone = TimeZone.getTimeZone("UTC")
+
+        val list = mutableListOf<Offset>()
+        progress.forEach { progress ->
+            val video = getVideoById(progress.id)
+            if (video != null) {
+                val date = df.format(Date(progress.timestamp))
+                val offset = Offset(
+                    etag = video.etag,
+                    offset = (progress.position / 1000).toInt(),
+                    duration = (progress.duration?.div(1000))?.toInt(),
+                    date = date
+                )
+//                Timber.d("updateProgress ${offset.etag} ${offset.date} ${Date(progress.timestamp)}")
+                progressMap[offset.etag] = offset
+                list.add(offset)
+            }
+        }
+        if (list.isEmpty()) {
+            return 0
+        }
+        return client.updateProgress(Offsets(offsets = list))
+    }
+
+    override fun getVideoProgress(video: Video): Progress? {
+        val offset = progressMap[video.etag]
+        if (offset != null) {
+            return toProgress(video, offset)
+        }
+        return null
+    }
+
+    override suspend fun getProgress(): List<Progress> {
+        progress()
+        val list = mutableListOf<Progress>()
+        progressMap.values.forEach {
+            val video = etags[it.etag]
+            if (video != null) {
+                list.add(toProgress(video, it))
+            }
+        }
+        return list
     }
 
     private fun toProfile(p: com.defsub.takeout.client.ProfileView): Profile {
@@ -251,7 +316,27 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             year = m.year(),
             rating = m.rating,
             tagline = m.tagline,
+            etag = m.key(),
             headers = mapOf("Cookie" to "Takeout=${userInfo.token}")
+        )
+    }
+
+    private fun toProgress(video: Video, offset: Offset): Progress {
+        // TODO optimize this
+        var date: Date? = null
+        try {
+            val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            df.timeZone = TimeZone.getTimeZone("UTC")
+            date = df.parse(offset.date)
+        } catch (e: ParseException) {
+            val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+            df.timeZone = TimeZone.getTimeZone("UTC")
+            date = df.parse(offset.date)
+        }
+        return Progress(
+            id = video.id,
+            position = offset.offset * 1000L,
+            timestamp = date?.time ?: 0
         )
     }
 

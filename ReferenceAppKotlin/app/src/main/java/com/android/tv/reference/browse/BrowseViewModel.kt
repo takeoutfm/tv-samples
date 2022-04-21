@@ -16,20 +16,18 @@
 package com.android.tv.reference.browse
 
 import android.app.Application
-import androidx.leanback.app.ProgressBarManager
 import androidx.lifecycle.*
-import com.android.tv.reference.TvReferenceApplication
+import androidx.lifecycle.Observer
 import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.repository.VideoRepositoryFactory
+import com.android.tv.reference.shared.datamodel.Progress
 import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.android.tv.reference.shared.watchprogress.WatchProgress
 import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
 import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
-import com.defsub.takeout.tv.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 class BrowseViewModel(application: Application) : AndroidViewModel(application) {
     private val videoRepository = VideoRepositoryFactory.getVideoRepository()
@@ -43,12 +41,13 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     fun refresh() {
         viewModelScope.launch {
             asyncRefresh()
+            pushWatchProgress()
         }
     }
 
     private suspend fun asyncRefresh() {
-        val list = getVideoGroupList(videoRepository)
-        browseContent.value = list
+        val groupList = getVideoGroupList(videoRepository)
+        browseContent.value = groupList
     }
 
     suspend fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {
@@ -64,4 +63,55 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     fun signOut() = viewModelScope.launch(Dispatchers.IO) {
         userManager.signOut()
     }
+
+    private fun pushWatchProgress() {
+        watchProgress.observeForever(object : Observer<List<WatchProgress>?> {
+            override fun onChanged(list: List<WatchProgress>?) {
+                if (list != null) {
+                    watchProgress.removeObserver(this)
+                    viewModelScope.launch {
+                        updateWatchProgress(list);
+                        syncWatchProgress()
+                    }
+                }
+            }
+        })
+    }
+
+    private suspend fun updateWatchProgress(watchList: List<WatchProgress>) {
+        val videoRepository = VideoRepositoryFactory.getVideoRepository()
+        val update = mutableListOf<Progress>()
+        watchList.forEach { progress ->
+            update.add(
+                Progress(
+                    id = progress.videoId,
+                    position = progress.startPosition,
+                    timestamp = progress.modifiedAt,
+                )
+            )
+        }
+        if (update.isNotEmpty()) {
+            videoRepository.updateProgress(update)
+        }
+    }
+
+    private suspend fun syncWatchProgress() {
+        val videoRepository = VideoRepositoryFactory.getVideoRepository()
+        val watchProgressRepository =
+            WatchProgressRepository(watchProgressDatabase.watchProgressDao())
+        val progress = videoRepository.getProgress()
+        progress.forEach { p ->
+            val video = videoRepository.getVideoById(p.id)
+            video?.let {
+                watchProgressRepository.insert(
+                    WatchProgress(
+                        videoId = p.id,
+                        startPosition = p.position,
+                        modifiedAt = p.timestamp
+                    )
+                )
+            }
+        }
+    }
 }
+

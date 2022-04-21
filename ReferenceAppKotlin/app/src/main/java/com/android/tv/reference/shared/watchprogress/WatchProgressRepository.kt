@@ -37,7 +37,8 @@ class WatchProgressRepository(private val watchProgressDao: WatchProgressDao) {
     }
 
     suspend fun insert(watchProgress: WatchProgress) {
-        watchProgressDao.insertWithTimestamp(watchProgress)
+//        watchProgressDao.insertWithTimestamp(watchProgress)
+        watchProgressDao.insert(watchProgress)
     }
 
     suspend fun deleteWatchProgress(videoId: String) {

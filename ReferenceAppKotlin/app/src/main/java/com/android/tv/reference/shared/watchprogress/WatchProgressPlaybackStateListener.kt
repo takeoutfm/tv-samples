@@ -17,6 +17,10 @@ package com.android.tv.reference.shared.watchprogress
 
 import com.android.tv.reference.playback.PlaybackStateListener
 import com.android.tv.reference.playback.VideoPlaybackState
+import com.android.tv.reference.repository.VideoRepositoryFactory
+import com.android.tv.reference.shared.datamodel.Progress
+import com.defsub.takeout.client.Client
+import com.defsub.takeout.client.Offset
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -37,17 +41,23 @@ class WatchProgressPlaybackStateListener(
             return
         }
 
-        val (videoId, position) = when (state) {
-            is VideoPlaybackState.Pause -> state.video.id to state.position
-            is VideoPlaybackState.End -> state.video.id to state.video.duration().toMillis()
+        val progress = when (state) {
+            is VideoPlaybackState.Pause ->
+                Progress(state.video.id, state.position, state.duration)
+            is VideoPlaybackState.End -> Progress(
+                state.video.id,
+                state.video.duration().toMillis(),
+                state.video.duration().toMillis()
+            )
             else -> throw IllegalStateException(
                 "WatchProgress is only updated in Pause or End states."
             )
         }
-        val watchProgress = WatchProgress(videoId, position)
+
         coroutineScope.launch(coroutineDispatcher) {
-            Timber.d("Saving watch progress: %s", watchProgress)
-            watchProgressRepository.insert(watchProgress)
+            Timber.d("Saving watch progress: %s", progress)
+            watchProgressRepository.insert(WatchProgress(progress.id, progress.position))
+            VideoRepositoryFactory.getVideoRepository().updateProgress(listOf(progress))
         }
     }
 }

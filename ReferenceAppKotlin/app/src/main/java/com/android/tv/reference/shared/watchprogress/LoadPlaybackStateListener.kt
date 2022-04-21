@@ -20,8 +20,11 @@ import androidx.lifecycle.Observer
 import com.android.tv.reference.playback.PlaybackStateListener
 import com.android.tv.reference.playback.PlaybackStateMachine
 import com.android.tv.reference.playback.VideoPlaybackState
+import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import androidx.lifecycle.viewModelScope
 
 /**
  * On [VideoPlaybackState.Load], loads the watch progress for a video and updates the state to
@@ -36,7 +39,7 @@ class LoadPlaybackStateListener(
 
     private var watchProgress: LiveData<WatchProgress>? = null
     private var video: Video? = null
-    private val watchProgressObserver = object: Observer<WatchProgress> {
+    private val watchProgressObserver = object : Observer<WatchProgress> {
         override fun onChanged(newWatchProgress: WatchProgress?) {
             startPosition = newWatchProgress?.startPosition ?: 0L
             Timber.d("progress startPosition is $startPosition")

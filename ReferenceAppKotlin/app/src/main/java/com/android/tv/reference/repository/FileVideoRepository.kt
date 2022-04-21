@@ -16,10 +16,7 @@
 package com.android.tv.reference.repository
 
 import android.app.Application
-import com.android.tv.reference.shared.datamodel.Detail
-import com.android.tv.reference.shared.datamodel.Profile
-import com.android.tv.reference.shared.datamodel.Video
-import com.android.tv.reference.shared.datamodel.VideoGroup
+import com.android.tv.reference.shared.datamodel.*
 import com.defsub.takeout.tv.R
 
 /**
@@ -71,5 +68,17 @@ class FileVideoRepository(override val application: Application) : VideoReposito
 
     override fun getAllVideosFromSeries(seriesUri: String): List<Video> {
         return _allVideos.filter { it.seriesUri == seriesUri }
+    }
+
+    override suspend fun updateProgress(progress: List<Progress>): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun getVideoProgress(video: Video): Progress? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getProgress(): List<Progress> {
+        TODO("Not yet implemented")
     }
 }

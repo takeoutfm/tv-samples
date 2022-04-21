@@ -27,17 +27,21 @@ import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.app.ProgressBarManager
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
+import com.android.tv.reference.shared.datamodel.Progress
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.android.tv.reference.shared.image.BlurImageTransformation
 import com.android.tv.reference.shared.image.OverlayImageTransformation
+import com.android.tv.reference.shared.watchprogress.WatchProgress
 import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
 import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
 import com.defsub.takeout.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
@@ -91,9 +95,12 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             viewModel.refresh()
         }
         val clearProgressItem = BrowseCustomMenu.MenuItem(getString(R.string.clear_watch_next)) {
-            val watchProgressDatabase = WatchProgressRepository(WatchProgressDatabase.getDatabase(requireContext()).watchProgressDao())
+            val watchProgressRepository = WatchProgressRepository(
+                WatchProgressDatabase.getDatabase(requireContext()).watchProgressDao()
+            )
             runBlocking {
-                watchProgressDatabase.deleteAll()
+                watchProgressRepository.deleteAll()
+                // TODO remote progress
             }
         }
 
@@ -101,23 +108,29 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         viewModel.watchProgress.observe(
             this,
             {
-                adapter = BrowseAdapter(doWatchProgress(),
+                adapter = BrowseAdapter(
+                    doWatchProgress(),
                     viewModel.browseContent.value ?: listOf(),
-                    viewModel.customMenuItems.value ?: listOf())
+                    viewModel.customMenuItems.value ?: listOf()
+                )
             }
         )
         viewModel.browseContent.observe(
             this,
             {
-                adapter = BrowseAdapter(doWatchProgress(), it,
-                    viewModel.customMenuItems.value ?: listOf())
+                adapter = BrowseAdapter(
+                    doWatchProgress(), it,
+                    viewModel.customMenuItems.value ?: listOf()
+                )
             }
         )
         viewModel.customMenuItems.observe(
             this,
             {
-                adapter = BrowseAdapter(doWatchProgress(),
-                    viewModel.browseContent.value ?: listOf(), it)
+                adapter = BrowseAdapter(
+                    doWatchProgress(),
+                    viewModel.browseContent.value ?: listOf(), it
+                )
             }
         )
         viewModel.isSignedIn.observe(
@@ -135,7 +148,8 @@ class BrowseFragment : BrowseSupportFragment(), Target {
                 }
                 settings.add(clearProgressItem)
                 viewModel.customMenuItems.postValue(
-                    listOf(BrowseCustomMenu(getString(R.string.settings), settings)))
+                    listOf(BrowseCustomMenu(getString(R.string.settings), settings))
+                )
                 viewModel.refresh()
             }
         )
@@ -183,8 +197,8 @@ class BrowseFragment : BrowseSupportFragment(), Target {
     private fun doWatchProgress(): VideoGroup {
         viewModel.watchProgress.value?.let {
             val videoRepository = VideoRepositoryFactory.getVideoRepository()
-            val videos = it.mapNotNull {
-                    watchProgress -> videoRepository.getVideoById(watchProgress.videoId) }
+            val videos =
+                it.mapNotNull { watchProgress -> videoRepository.getVideoById(watchProgress.videoId) }
             return VideoGroup(getString(R.string.watch_next), videos)
         }
         return VideoGroup("", emptyList())

@@ -52,6 +52,7 @@ class Video(
     val rating: String = "",
     val year: Int = -1,
     val vote: Int = 0,
+    val etag: String = ""
 ) : Parcelable {
 
     override fun toString(): String {

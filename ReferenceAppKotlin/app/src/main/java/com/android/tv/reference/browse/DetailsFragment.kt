@@ -63,7 +63,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         // Get the video data.
         video = DetailsFragmentArgs.fromBundle(requireArguments()).video
-        title = video.name
+        title = getString(R.string.app_name)
 
         // Details
         val rowPresenter =

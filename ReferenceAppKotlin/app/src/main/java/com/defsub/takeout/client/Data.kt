@@ -103,6 +103,10 @@ fun Track.location(): String {
     return "/api/tracks/$id/location"
 }
 
+fun Track.key(): String {
+    return etag.replace("\"", "")
+}
+
 @Serializable
 data class Release(
     @SerialName("ID") val id: Int,
@@ -190,6 +194,10 @@ fun Movie.year(): Int {
 
 fun Movie.location(): String {
     return "/api/movies/$id/location"
+}
+
+fun Movie.key(): String {
+    return etag.replace("\"", "")
 }
 
 @Serializable
@@ -343,29 +351,48 @@ data class RadioView(
 
 @Serializable
 data class Spiff(
-    @SerialName("index") val index: Int,
-    @SerialName("position") val position: Float,
-    @SerialName("playlist") val playlist: Playlist
+    @SerialName("Index") val index: Int,
+    @SerialName("Position") val position: Float,
+    @SerialName("Playlist") val playlist: Playlist
 )
 
 @Serializable
 data class Entry(
-    @SerialName("creator") val creator: String,
-    @SerialName("album") val album: String,
-    @SerialName("title") val title: String,
-    @SerialName("image") val image: String,
-    @SerialName("location") val locations: List<String>,
-    @SerialName("identifier") val identifiers: List<String>,
-    @SerialName("size") val sizes: List<Int> = emptyList()
+    @SerialName("Creator") val creator: String,
+    @SerialName("Album") val album: String,
+    @SerialName("Title") val title: String,
+    @SerialName("Image") val image: String,
+    @SerialName("Location") val locations: List<String>,
+    @SerialName("Identifier") val identifiers: List<String>,
+    @SerialName("Size") val sizes: List<Int> = emptyList()
 )
 
 @Serializable
 data class Playlist(
-    @SerialName("location") val location: String? = null,
-    @SerialName("creator") val creator: String? = null,
-    @SerialName("title") val title: String,
-    @SerialName("image") val image: String? = null,
-    @SerialName("track") val tracks: List<Entry>
+    @SerialName("Location") val location: String? = null,
+    @SerialName("Creator") val creator: String? = null,
+    @SerialName("Title") val title: String,
+    @SerialName("Image") val image: String? = null,
+    @SerialName("Track") val tracks: List<Entry>
+)
+
+@Serializable
+data class Offset(
+    @SerialName("ID") val id: Int? = null,
+    @SerialName("ETag") val etag: String,
+    @SerialName("Duration") val duration: Int? = null,
+    @SerialName("Offset") val offset: Int,
+    @SerialName("Date") val date: String
+)
+
+@Serializable
+data class Offsets(
+    @SerialName("Offsets") val offsets: List<Offset>
+)
+
+@Serializable
+data class ProgressView(
+    @SerialName("Offsets") val offsets: List<Offset>
 )
 
 private val utcFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))

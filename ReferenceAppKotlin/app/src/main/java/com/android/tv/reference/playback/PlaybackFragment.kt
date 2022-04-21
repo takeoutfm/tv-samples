@@ -30,6 +30,7 @@ import com.android.tv.reference.shared.datamodel.Video
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
@@ -106,8 +107,9 @@ class PlaybackFragment : VideoSupportFragment() {
         subtitles = SubtitleView(requireContext())
         // text/x-ssa doesn't seem to take the user defaults correctly.
         // Some style elements appear to work
-        subtitles.setUserDefaultStyle()
-        subtitles.setUserDefaultTextSize()
+        // -- these don't seem to work
+//        subtitles.setUserDefaultStyle()
+//        subtitles.setUserDefaultTextSize()
 
         if (view is ViewGroup) {
             val root = view as ViewGroup
@@ -369,7 +371,7 @@ class PlaybackFragment : VideoSupportFragment() {
                     VideoPlaybackState.End(video)
                 )
                 else -> viewModel.onStateChange(
-                    VideoPlaybackState.Pause(video, exoplayer!!.currentPosition)
+                    VideoPlaybackState.Pause(video, exoplayer!!.currentPosition, exoplayer!!.duration)
                 )
             }
         }

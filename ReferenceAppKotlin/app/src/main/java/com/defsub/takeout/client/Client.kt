@@ -22,6 +22,7 @@ import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import timber.log.Timber
 import java.net.URLEncoder
@@ -156,6 +157,24 @@ class Client(private val endpoint: String = defaultEndpoint,
     suspend fun search(query: String): SearchView {
         val q = URLEncoder.encode(query, "utf-8")
         return get("/api/search?q=$q", 0)
+    }
+
+    suspend fun progress(ttl: Int): ProgressView {
+        return get("/api/progress", ttl)
+    }
+
+    suspend fun updateProgress(offsets: Offsets): Int {
+        val client = client();
+        val response: HttpResponse = client.post("$endpoint/api/progress") {
+            contentType(ContentType.Application.Json)
+            cookie?.let { header(HttpHeaders.Cookie, "Takeout=$cookie") }
+            body = offsets
+        }
+        // 201: created
+        // 205: reset content, newer offset exists
+        // 400: error
+        // 500: error
+        return response.status.value;
     }
 
     companion object {

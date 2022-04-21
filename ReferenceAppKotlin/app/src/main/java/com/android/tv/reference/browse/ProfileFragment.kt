@@ -29,7 +29,7 @@ class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         backgroundManager = BackgroundManager.getInstance(requireActivity())
         profile = ProfileFragmentArgs.fromBundle(requireArguments()).profile
-        title = profile.person.name
+        title = getString(R.string.app_name)
 
         val rowPresenter =
             FullWidthDetailsOverviewRowPresenter(object : AbstractDetailsDescriptionPresenter() {

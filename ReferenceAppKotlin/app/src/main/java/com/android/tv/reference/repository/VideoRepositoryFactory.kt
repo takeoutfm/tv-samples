@@ -15,7 +15,6 @@
  */
 package com.android.tv.reference.repository
 
-import android.app.Application
 import com.android.tv.reference.TvReferenceApplication
 import com.defsub.takeout.repository.TakeoutVideoRepository
 

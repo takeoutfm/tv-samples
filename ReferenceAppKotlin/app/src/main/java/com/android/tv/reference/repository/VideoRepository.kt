@@ -33,6 +33,9 @@ interface VideoRepository {
     suspend fun getVideoDetail(id: String): Detail?
     suspend fun getProfile(id: String): Profile?
     suspend fun search(query: String): List<Video>
+    suspend fun updateProgress(progress: List<Progress>): Int
+    fun getVideoProgress(video: Video): Progress?
+    suspend fun getProgress(): List<Progress>
 
     /**
      * Returns a Video for the passed [id] or null if there is no matching video.
