@@ -31,12 +31,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.lang.StringBuilder
 
 class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListener {
     companion object {
         private const val PLAY_ACTION = 1L
         private const val CAST_ACTION = 2L
         private const val RESUME_ACTION = 3L
+        private const val RELATED_ACTION = 4L
     }
 
     private lateinit var video: Video
@@ -44,6 +46,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
     private lateinit var backgroundManager: BackgroundManager
     private lateinit var handler: Handler
     private lateinit var watchProgressRepository: WatchProgressRepository
+    private var hasRelated: Boolean = false
 
     private val displayMetrics = DisplayMetrics()
     private var backgroundUri: String = ""
@@ -65,13 +68,30 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         video = DetailsFragmentArgs.fromBundle(requireArguments()).video
         title = getString(R.string.app_name)
 
+        val separator = " \u2022 "
+        val detail = StringBuilder()
+        if (video.year != -1) {
+            detail.append(video.year)
+        }
+        if (video.rating.isNotEmpty()) {
+            if (detail.isNotEmpty()) detail.append(separator)
+            detail.append(video.rating)
+        }
+        if (video.duration.isNotEmpty()) {
+            if (detail.isNotEmpty()) detail.append(separator)
+            detail.append(video.formattedDuration())
+        }
+        if (video.tagline.isNotEmpty()) {
+            if (detail.isNotEmpty()) detail.append(separator)
+            detail.append(video.tagline)
+        }
+
         // Details
         val rowPresenter =
             FullWidthDetailsOverviewRowPresenter(object : AbstractDetailsDescriptionPresenter() {
                 override fun onBindDescription(vh: ViewHolder?, item: Any?) {
                     vh?.title?.text = video.name
-                    vh?.subtitle?.text =
-                        "${video.year} \u2022 ${video.rating} \u2022 ${video.tagline}"
+                    vh?.subtitle?.text = detail.toString()
                     vh?.body?.text = video.description
                 }
             })
@@ -99,6 +119,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
                         }
                     }
                     if (detail.related.isNotEmpty()) {
+                        hasRelated = true
                         val header = HeaderItem(1, getString(R.string.header_recommended))
                         val relatedRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
                         mRowsAdapter.add(ListRow(header, relatedRowAdapter))
@@ -128,6 +149,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         val resumeAction = Action(RESUME_ACTION, getString(R.string.header_resume))
         val playAction = Action(PLAY_ACTION, getString(R.string.header_play))
         val castAction = Action(CAST_ACTION, getString(R.string.header_cast))
+        val relatedAction = Action(RELATED_ACTION, getString(R.string.header_recommended))
 
         // add resume if there's existing watch progress
         val progress = watchProgressRepository.getWatchProgressByVideoId(video.id)
@@ -144,6 +166,9 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
             }
             actionsAdapter.add(playAction)
             actionsAdapter.add(castAction)
+            if (hasRelated) {
+                actionsAdapter.add(relatedAction)
+            }
         }
         detailsOverview.actionsAdapter = actionsAdapter
     }
@@ -231,6 +256,7 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
                             DetailsFragmentDirections.actionDetailsFragmentToPlaybackFragment(video))
                 }
                 CAST_ACTION -> setSelectedPosition(1)
+                RELATED_ACTION -> setSelectedPosition(2)
             }
         }
     }

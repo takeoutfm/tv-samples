@@ -56,31 +56,30 @@ class SignInFragment : Fragment() {
     ): View {
         val binding = FragmentSignInBinding.inflate(inflater, container, false)
         viewModel.signInStatus.observe(
-            viewLifecycleOwner,
-            { status ->
-                when (status) {
-                    is SignInStatus.Success -> findNavController().popBackStack()
-                    is SignInStatus.ShouldSavePassword -> startSavePasswordWithGoogle(
-                        status.username,
-                        status.password
-                    )
-                    is SignInStatus.Error -> {
-                        val errorText = when (status) {
-                            is SignInStatus.Error.InputError ->
-                                getString(R.string.empty_username_or_password)
-                            is SignInStatus.Error.InvalidPassword ->
-                                getString(R.string.invalid_credentials)
-                            is SignInStatus.Error.ServerError -> getString(R.string.server_error)
-                            is SignInStatus.Error.OneTapInvalid ->
-                                getString(R.string.invalid_credentials)
-                            is SignInStatus.Error.OneTapError -> getString(R.string.onetap_error)
-                            else -> getString(R.string.unknown_error)
-                        }
-                        binding.signInError.text = getString(R.string.sign_in_error, errorText)
+            viewLifecycleOwner
+        ) { status ->
+            when (status) {
+                is SignInStatus.Success -> findNavController().popBackStack()
+                is SignInStatus.ShouldSavePassword -> startSavePasswordWithGoogle(
+                    status.username,
+                    status.password
+                )
+                is SignInStatus.Error -> {
+                    val errorText = when (status) {
+                        is SignInStatus.Error.InputError ->
+                            getString(R.string.empty_username_or_password)
+                        is SignInStatus.Error.InvalidPassword ->
+                            getString(R.string.invalid_credentials)
+                        is SignInStatus.Error.ServerError -> getString(R.string.server_error)
+                        is SignInStatus.Error.OneTapInvalid ->
+                            getString(R.string.invalid_credentials)
+                        is SignInStatus.Error.OneTapError -> getString(R.string.onetap_error)
+                        else -> getString(R.string.unknown_error)
                     }
+                    binding.signInError.text = getString(R.string.sign_in_error, errorText)
                 }
             }
-        )
+        }
         binding.signInButton.setOnClickListener {
             val endpoint = binding.endpointEdit.text.toString()
             val username = binding.usernameEdit.text.toString()

@@ -179,8 +179,8 @@ class PlaybackFragment : VideoSupportFragment() {
 //                "audio/true-hd",
 //                "audio/vnd.dts.hd",
 //                "audio/vnd.dts",
-//                "audio/ac3",
-                "audio/mp4a-latm"
+                "audio/ac3",
+//                "audio/mp4a-latm"
             )
             .setPreferredTextLanguageAndRoleFlagsToCaptioningManagerSettings(requireContext())
             .build()
@@ -218,6 +218,7 @@ class PlaybackFragment : VideoSupportFragment() {
         localExoplayer: ExoPlayer,
         trackSelector: DefaultTrackSelector
     ): ProgressTransportControlGlue<LeanbackPlayerAdapter> {
+
         return ProgressTransportControlGlue(
             requireContext(),
             LeanbackPlayerAdapter(
@@ -284,10 +285,21 @@ class PlaybackFragment : VideoSupportFragment() {
             viewModel.onStateChange(VideoPlaybackState.Error(video, error))
         }
 
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            super.onPlaybackStateChanged(playbackState)
+            if (playbackState == Player.STATE_READY) {
+                // available tracks and whether supported, type, and selection
+                val tracksInfo = exoplayer?.currentTracksInfo!!
+                glue.addTrackActions(requireContext(), tracksInfo);
+            }
+        }
+
         override fun onTracksChanged(
             trackGroups: TrackGroupArray,
             trackSelections: TrackSelectionArray
         ) {
+            glue.updateTrackSelections(trackSelections)
+
             // audio
             var enc = "None"
             var mix = ""
@@ -300,7 +312,6 @@ class PlaybackFragment : VideoSupportFragment() {
                 val s = trackSelections[i] ?: continue
                 for (f in 0 until s.length()) {
                     val x = s.getFormat(f)
-//                    Timber.d(s.getFormat(f).toString())
                     val sampleMimeType = x.sampleMimeType ?: continue
                     if (sampleMimeType.startsWith("audio/")) {
                         Timber.d("XXX -> audio ${x.sampleMimeType} ${x.label} ${x.channelCount} ${x.sampleRate}")
@@ -318,6 +329,8 @@ class PlaybackFragment : VideoSupportFragment() {
                             "audio/vnd.dts.hd" -> "DTS HD"
                             "audio/true-hd" -> "True HD"
                             "audio/ac3" -> "AC3"
+                            "audio/flac" -> "FLAC"
+                            "audio/mp3" -> "MP3"
                             else -> "${x.sampleMimeType}"
                         }
                     } else if (

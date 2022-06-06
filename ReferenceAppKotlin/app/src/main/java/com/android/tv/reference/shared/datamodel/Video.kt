@@ -68,6 +68,18 @@ class Video(
         return Duration.parse(duration)
     }
 
+    fun formattedDuration(): String {
+        val duration = duration()
+        val totalMins = duration.toMinutes()
+        val hours = totalMins / 60
+        val mins = totalMins % 60
+        return if (hours > 0) {
+            "%dh %dm".format(hours, mins)
+        } else {
+            "%dm".format(totalMins)
+        }
+    }
+
     /**
      * The user has "finished" a video if the end credits start OR an approximation based on the
      * content length. We do not have metadata that contains the timestamp for when credits appear

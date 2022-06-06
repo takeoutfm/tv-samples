@@ -315,6 +315,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             vote = vote,
             year = m.year(),
             rating = m.rating,
+            duration = m.iso8601(),
             tagline = m.tagline,
             etag = m.key(),
             headers = mapOf("Cookie" to "Takeout=${userInfo.token}")

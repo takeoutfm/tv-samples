@@ -97,26 +97,25 @@ class MainActivity : FragmentActivity() {
             DeepLinkViewModel::class.java
         )
         viewModel.deepLinkResult.observe(
-            this,
-            {
-                when (val result = it.getContentIfNotHandled()) {
-                    is Result.Success -> {
-                        val video = result.data
-                        Timber.d("Loaded '${video.name}' for deep link '$uri'")
+            this
+        ) {
+            when (val result = it.getContentIfNotHandled()) {
+                is Result.Success -> {
+                    val video = result.data
+                    Timber.d("Loaded '${video.name}' for deep link '$uri'")
 
 //                        loadPlaybackFragment(video)
-                        loadDetailsFragment(video)
-                    }
-                    is Result.Error -> {
-                        // Here you might show an error to the user or automatically trigger a search
-                        // for content that might match the deep link; since this is just a demo app,
-                        // the error is logged and then the app starts normally
-                        Timber.w(result.exception, "Failed to load deep link $uri, ignoring")
-                        loadStartingPage()
-                    }
+                    loadDetailsFragment(video)
+                }
+                is Result.Error -> {
+                    // Here you might show an error to the user or automatically trigger a search
+                    // for content that might match the deep link; since this is just a demo app,
+                    // the error is logged and then the app starts normally
+                    Timber.w(result.exception, "Failed to load deep link $uri, ignoring")
+                    loadStartingPage()
                 }
             }
-        )
+        }
     }
 
     /**
@@ -127,11 +126,11 @@ class MainActivity : FragmentActivity() {
         @Suppress("ConstantConditionIf")
         if (BuildConfig.FIREBASE_ENABLED) {
             Timber.d("Firebase is enabled, loading browse")
-            navGraph.startDestination = R.id.browseFragment
+//            navGraph.startDestination = R.id.browseFragment
         } else {
             Timber.d("Firebase is not enabled; loading browse")
 //            navGraph.startDestination = R.id.noFirebaseFragment
-            navGraph.startDestination = R.id.browseFragment
+//            navGraph.startDestination = R.id.browseFragment
         }
 
         // Set the graph to trigger loading the start destination

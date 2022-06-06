@@ -180,7 +180,7 @@ data class Movie(
     @SerialName("Overview") val overview: String,
     @SerialName("Budget") val budget: String,
     @SerialName("Revenue") val revenue: String,
-    @SerialName("Runtime") val runtime: String,
+    @SerialName("Runtime") val runtime: Int,
     @SerialName("VoteAverage") val voteAverage: Float?,
     @SerialName("VoteCount") val voteCount: Int?,
     @SerialName("BackdropPath") val backdropPath: String,
@@ -198,6 +198,12 @@ fun Movie.location(): String {
 
 fun Movie.key(): String {
     return etag.replace("\"", "")
+}
+
+fun Movie.iso8601(): String {
+    val hours = runtime / 60
+    val mins = runtime % 60
+    return "PT%02dH%02dM".format(hours, mins)
 }
 
 @Serializable

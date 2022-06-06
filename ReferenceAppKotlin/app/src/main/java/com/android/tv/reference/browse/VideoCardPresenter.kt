@@ -49,12 +49,16 @@ class VideoCardPresenter : Presenter() {
         val binding = PresenterVideoCardBinding.bind(viewHolder.view)
         binding.root.titleText = video.name
 
+        val separator = " \u2022 "
         val content = StringBuilder()
-        val year = video.year
-        if (year != -1) content.append(year)
+        if (video.year != -1) content.append(video.year)
         if (video.rating.isNotEmpty()) {
-            if (year != -1) content.append(" \u2022 ")
+            if (content.isNotEmpty()) content.append(separator)
             content.append(video.rating)
+        }
+        if (video.duration.isNotEmpty()) {
+            if (content.isNotEmpty()) content.append(separator)
+            content.append(video.formattedDuration())
         }
         binding.root.contentText = content
 

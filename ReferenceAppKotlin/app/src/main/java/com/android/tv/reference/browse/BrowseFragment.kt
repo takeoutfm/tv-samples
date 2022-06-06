@@ -106,53 +106,51 @@ class BrowseFragment : BrowseSupportFragment(), Target {
 
         viewModel = ViewModelProvider(this).get(BrowseViewModel::class.java)
         viewModel.watchProgress.observe(
-            this,
-            {
-                adapter = BrowseAdapter(
-                    doWatchProgress(),
-                    viewModel.browseContent.value ?: listOf(),
-                    viewModel.customMenuItems.value ?: listOf()
-                )
-            }
-        )
+            this
+        ) {
+            adapter = BrowseAdapter(
+                doWatchProgress(),
+                viewModel.browseContent.value ?: listOf(),
+                viewModel.customMenuItems.value ?: listOf()
+            )
+        }
         viewModel.browseContent.observe(
-            this,
-            {
-                adapter = BrowseAdapter(
-                    doWatchProgress(), it,
-                    viewModel.customMenuItems.value ?: listOf()
-                )
-            }
-        )
+            this
+        ) {
+            adapter = BrowseAdapter(
+                doWatchProgress(), it,
+                viewModel.customMenuItems.value ?: listOf()
+            )
+        }
         viewModel.customMenuItems.observe(
-            this,
-            {
-                adapter = BrowseAdapter(
-                    doWatchProgress(),
-                    viewModel.browseContent.value ?: listOf(), it
-                )
-            }
-        )
+            this
+        ) {
+            adapter = BrowseAdapter(
+                doWatchProgress(),
+                viewModel.browseContent.value ?: listOf(), it
+            )
+        }
         viewModel.isSignedIn.observe(
-            this,
-            {
-                val settings = mutableListOf(
-                    if (it) {
-                        signOutMenuItem
-                    } else {
-                        signInMenuItem
-                    }
-                )
+            this
+        ) {
+            val settings = mutableListOf(
                 if (it) {
-                    settings.add(refreshMenuItem)
+                    signOutMenuItem
+                } else {
+                    signInMenuItem
                 }
-                settings.add(clearProgressItem)
-                viewModel.customMenuItems.postValue(
-                    listOf(BrowseCustomMenu(getString(R.string.settings), settings))
-                )
+            )
+            if (it) {
+                settings.add(refreshMenuItem)
+            }
+            settings.add(clearProgressItem)
+            viewModel.customMenuItems.postValue(
+                listOf(BrowseCustomMenu(getString(R.string.settings), settings))
+            )
+            if (it) {
                 viewModel.refresh()
             }
-        )
+        }
 
         setOnItemViewClickedListener { _, item, _, _ ->
             when (item) {
@@ -231,6 +229,9 @@ class BrowseFragment : BrowseSupportFragment(), Target {
     private fun updateBackgroundImmediate() {
         if (activity == null) {
             // Triggered after fragment detached from activity, ignore
+            return
+        }
+        if (backgroundUri.isEmpty()) {
             return
         }
 

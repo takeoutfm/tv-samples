@@ -73,8 +73,6 @@ class CastHelper(val loadVideo: (Video) -> Unit, private val application: Applic
         ) {
             if (mediaSession != null) {
                 mediaManager.setSessionCompatToken(mediaSession.sessionToken)
-            } else {
-                mediaManager.setSessionCompatToken(null)
             }
         }
     }

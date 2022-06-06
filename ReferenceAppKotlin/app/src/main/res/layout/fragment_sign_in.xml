@@ -40,7 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:autofillHints="endpoint"
-        android:hint="@string/endpoint"
+        android:text="@string/endpoint"
         android:importantForAutofill="yes"
         android:inputType="textUri"
         android:paddingStart="8dp"

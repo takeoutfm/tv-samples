@@ -46,10 +46,7 @@ class CastMediaLoadCommandCallback(
 ) :
     MediaLoadCommandCallback() {
 
-    override fun onLoad(
-        senderId: String?,
-        mediaLoadRequestData: MediaLoadRequestData?
-    ): Task<MediaLoadRequestData> {
+    override fun onLoad(senderId: String?, mediaLoadRequestData: MediaLoadRequestData): Task<MediaLoadRequestData> {
         return if (mediaLoadRequestData == null) {
             // Throw MediaException to indicate load failure.
             Tasks.forException(

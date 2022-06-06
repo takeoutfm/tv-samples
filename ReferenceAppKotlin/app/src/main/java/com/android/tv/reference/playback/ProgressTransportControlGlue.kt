@@ -16,6 +16,8 @@
 package com.android.tv.reference.playback
 
 import android.content.Context
+import android.media.MediaCodecInfo
+import android.provider.MediaStore
 import androidx.annotation.VisibleForTesting
 import androidx.leanback.media.*
 import androidx.leanback.widget.Action
@@ -24,9 +26,15 @@ import androidx.leanback.widget.PlaybackControlsRow.*
 import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX_OFF
 import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX_ON
 import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.TracksInfo
+import com.google.android.exoplayer2.audio.MediaCodecAudioRenderer
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
+import com.google.android.exoplayer2.source.TrackGroup
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
+import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides
+import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides.TrackSelectionOverride
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -69,9 +77,16 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 
     var closedCaptioningAction: ClosedCaptioningAction = ClosedCaptioningAction(context)
 
+    var audioAction: AudioAction? = null
+
+    var textAction: TextAction? = null
+
+    private var primaryActionsAdapter: ArrayObjectAdapter? = null
+
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
         // super.onCreatePrimaryActions() will create the play / pause action.
         super.onCreatePrimaryActions(primaryActionsAdapter)
+        this.primaryActionsAdapter = primaryActionsAdapter
 
         // TODO default to ON
         closedCaptioningAction.index = INDEX_ON
@@ -80,7 +95,6 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
         primaryActionsAdapter.apply {
             add(skipBackwardAction)
             add(skipForwardAction)
-            add(closedCaptioningAction)
         }
     }
 
@@ -95,7 +109,73 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
             skipBackwardAction -> skipBackward()
             skipForwardAction -> skipForward()
             closedCaptioningAction -> toggleClosedCaptions()
+            audioAction -> nextAudioTrack()
+            textAction -> nextTextTrack()
             else -> super.onActionClicked(action)
+        }
+    }
+
+    fun updateTrackSelections(trackSelections: TrackSelectionArray) {
+        for (i in 0 until trackSelections.length) {
+            val selection = trackSelections[i] ?: continue
+            // selection.type is unset, ugh, need to use mimetype?
+            val selectedTrackGroup = selection.trackGroup
+            val format = selectedTrackGroup.getFormat(0)
+            val mimeType = format.sampleMimeType ?: continue
+
+            if (mimeType.startsWith("audio/")) {
+                if (audioAction != null) {
+                    val action = audioAction!!
+                    for (trackIndex in action.trackGroups.indices) {
+                        if (action.trackGroups[trackIndex].id == selectedTrackGroup.id) {
+                            action.index = trackIndex
+                            notifyItemChanged(primaryActionsAdapter, action)
+                            break
+                        }
+                    }
+                }
+            } else if (mimeType.startsWith("text/") || mimeType.startsWith("application/pgs")) {
+                if (textAction != null) {
+                    val action = textAction!!
+                    for (trackIndex in action.trackGroups.indices) {
+                        if (action.trackGroups[trackIndex].id == selectedTrackGroup.id) {
+                            action.index = trackIndex
+                            notifyItemChanged(primaryActionsAdapter, action)
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // only call when player state is ready
+    fun addTrackActions(context: Context, tracksInfo: TracksInfo) {
+        if (audioAction != null || textAction != null) {
+            return
+        }
+        val supportedAudio = mutableListOf<TrackGroup>()
+        val supportedText = mutableListOf<TrackGroup>()
+        val trackGroupInfos = tracksInfo.trackGroupInfos
+        for (infosIndex in 0 until trackGroupInfos.size) {
+            val trackInfo = trackGroupInfos[infosIndex]
+            val trackGroup = trackInfo.trackGroup
+            if (trackInfo.isSupported) {
+                if (trackInfo.trackType == C.TRACK_TYPE_AUDIO) {
+                    supportedAudio.add(trackGroup)
+                } else if (trackInfo.trackType == C.TRACK_TYPE_TEXT) {
+                    supportedText.add(trackGroup)
+                }
+            }
+        }
+        if (supportedText.isNotEmpty()) {
+            textAction = TextAction(context, supportedText)
+            primaryActionsAdapter?.add(closedCaptioningAction)
+            primaryActionsAdapter?.add(textAction)
+        }
+        if (supportedAudio.isNotEmpty()) {
+            audioAction = AudioAction(context, supportedAudio)
+            primaryActionsAdapter?.add(audioAction)
         }
     }
 
@@ -113,28 +193,37 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
         playerAdapter.seekTo(newPosition)
     }
 
-    private fun printGroup(groups: TrackGroupArray) {
-        for (i in 0 until groups.length) {
-            for (j in 0 until groups[i].length) {
-                Timber.d("TrackGroup[$i] format ${groups[i].getFormat(j)}")
-            }
-        }
+//    private fun printGroup(groups: TrackGroupArray) {
+//        for (i in 0 until groups.length) {
+//            for (j in 0 until groups[i].length) {
+//                Timber.d("xxx TrackGroup[$i] format ${groups[i].getFormat(j)}")
+//            }
+//        }
+//    }
+
+    fun applySelection(action: MultiAction, trackGroup: TrackGroup) {
+        notifyItemChanged(primaryActionsAdapter, action)
+        val overrides = TrackSelectionOverrides.Builder()
+            .setOverrideForType(TrackSelectionOverride(trackGroup))
+            .build()
+        trackSelector.parameters =
+            trackSelector.buildUponParameters().setTrackSelectionOverrides(overrides).build()
+    }
+
+    private fun nextAudioTrack() {
+        val action = audioAction!!
+        action.nextIndex()
+        applySelection(action, action.trackGroups[action.index])
+    }
+
+    private fun nextTextTrack() {
+        val action = textAction!!
+        action.nextIndex()
+        applySelection(action, action.trackGroups[action.index])
     }
 
     private fun toggleClosedCaptions() {
         val mappedTrackInfo = trackSelector.currentMappedTrackInfo ?: return
-        for (rendererIndex in 0 until mappedTrackInfo.rendererCount) {
-            val trackType = mappedTrackInfo.getRendererType(rendererIndex)
-            if (trackType == C.TRACK_TYPE_AUDIO) {
-                val groups = mappedTrackInfo.getTrackGroups(trackType)
-                Timber.d("audio groups ${groups.length}")
-                printGroup(groups)
-            } else if (trackType == C.TRACK_TYPE_VIDEO) {
-                val groups = mappedTrackInfo.getTrackGroups(trackType)
-                printGroup(groups)
-            }
-        }
-
         val trackGroups = mappedTrackInfo.getTrackGroups(C.TRACK_TYPE_VIDEO)
         if (closedCaptioningAction.index == INDEX_ON) {
             closedCaptioningAction.index = INDEX_OFF
