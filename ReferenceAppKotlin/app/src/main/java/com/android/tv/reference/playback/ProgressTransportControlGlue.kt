@@ -16,8 +16,7 @@
 package com.android.tv.reference.playback
 
 import android.content.Context
-import android.media.MediaCodecInfo
-import android.provider.MediaStore
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.leanback.media.*
 import androidx.leanback.widget.Action
@@ -27,15 +26,13 @@ import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX
 import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX_ON
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.TracksInfo
-import com.google.android.exoplayer2.audio.MediaCodecAudioRenderer
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.TrackGroup
-import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides
 import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides.TrackSelectionOverride
-import timber.log.Timber
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
 
@@ -81,6 +78,8 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 
     var textAction: TextAction? = null
 
+    private var toast: WeakReference<Toast>? = null
+
     private var primaryActionsAdapter: ArrayObjectAdapter? = null
 
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
@@ -122,8 +121,9 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
             val selectedTrackGroup = selection.trackGroup
             val format = selectedTrackGroup.getFormat(0)
             val mimeType = format.sampleMimeType ?: continue
+            val info = FormatInfo(format)
 
-            if (mimeType.startsWith("audio/")) {
+            if (info.isAudio()) {
                 if (audioAction != null) {
                     val action = audioAction!!
                     for (trackIndex in action.trackGroups.indices) {
@@ -134,7 +134,7 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
                         }
                     }
                 }
-            } else if (mimeType.startsWith("text/") || mimeType.startsWith("application/pgs")) {
+            } else if (info.isText()) {
                 if (textAction != null) {
                     val action = textAction!!
                     for (trackIndex in action.trackGroups.indices) {
@@ -201,7 +201,7 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 //        }
 //    }
 
-    fun applySelection(action: MultiAction, trackGroup: TrackGroup) {
+    private fun applySelection(action: MultiAction, trackGroup: TrackGroup) {
         notifyItemChanged(primaryActionsAdapter, action)
         val overrides = TrackSelectionOverrides.Builder()
             .setOverrideForType(TrackSelectionOverride(trackGroup))
@@ -210,16 +210,43 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
             trackSelector.buildUponParameters().setTrackSelectionOverrides(overrides).build()
     }
 
+    private fun showToast(msg: String) {
+        toast?.get()?.cancel()
+        toast?.clear()
+        toast = WeakReference(Toast.makeText(context, msg, Toast.LENGTH_SHORT))
+        toast?.get()?.show()
+    }
+
     private fun nextAudioTrack() {
         val action = audioAction!!
         action.nextIndex()
-        applySelection(action, action.trackGroups[action.index])
+        val trackGroup = action.trackGroups[action.index]
+        applySelection(action, trackGroup)
+        val info = FormatInfo(trackGroup.getFormat(0))
+        showToast(
+            "%s %s %s (%d/%d)".format(
+                info.shortName(),
+                info.audioMixDesc(),
+                info.audioMix(),
+                action.index + 1,
+                action.trackGroups.size
+            )
+        )
     }
 
     private fun nextTextTrack() {
         val action = textAction!!
         action.nextIndex()
-        applySelection(action, action.trackGroups[action.index])
+        val trackGroup = action.trackGroups[action.index]
+        applySelection(action, trackGroup)
+        val info = FormatInfo(trackGroup.getFormat(0))
+        showToast(
+            "%s (%d/%d)".format(
+                info.languageDisplayName(),
+                action.index + 1,
+                action.trackGroups.size
+            )
+        )
     }
 
     private fun toggleClosedCaptions() {

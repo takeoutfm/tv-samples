@@ -19,7 +19,6 @@ import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
 import android.view.ViewGroup
-import android.view.accessibility.CaptioningManager
 import androidx.fragment.app.viewModels
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.VideoSupportFragment
@@ -30,7 +29,6 @@ import com.android.tv.reference.shared.datamodel.Video
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
-import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
@@ -40,7 +38,6 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.gms.cast.tv.CastReceiverContext
 import timber.log.Timber
 import java.time.Duration
-import java.util.*
 
 /** Fragment that plays video content with ExoPlayer. */
 class PlaybackFragment : VideoSupportFragment() {
@@ -310,62 +307,15 @@ class PlaybackFragment : VideoSupportFragment() {
             var def = ""
             for (i in 0 until trackSelections.length) {
                 val s = trackSelections[i] ?: continue
-                for (f in 0 until s.length()) {
-                    val x = s.getFormat(f)
-                    val sampleMimeType = x.sampleMimeType ?: continue
-                    if (sampleMimeType.startsWith("audio/")) {
-                        Timber.d("XXX -> audio ${x.sampleMimeType} ${x.label} ${x.channelCount} ${x.sampleRate}")
-                        mix = when (x.channelCount) {
-                            1 -> "Mono"
-                            2 -> "Stereo"
-                            6 -> "5.1"
-                            7 -> "5.2"
-                            8 -> "7.1"
-                            else -> "${x.channelCount}"
-                        }
-                        enc = when (x.sampleMimeType) {
-                            "audio/mp4a-latm" -> "AAC"
-                            "audio/vnd.dts" -> "DTS"
-                            "audio/vnd.dts.hd" -> "DTS HD"
-                            "audio/true-hd" -> "True HD"
-                            "audio/ac3" -> "AC3"
-                            "audio/flac" -> "FLAC"
-                            "audio/mp3" -> "MP3"
-                            else -> "${x.sampleMimeType}"
-                        }
-                    } else if (
-                    // "application/vobsub" not supported by exoplayer
-                        sampleMimeType.startsWith("application/pgs") ||
-                        sampleMimeType.startsWith("application/x-subrip") ||
-                        sampleMimeType.startsWith("text/x-ssa")
-                    ) {
-                        sub = Locale(x.language!!).displayName
-                    } else if (sampleMimeType.startsWith("video/")) {
-                        vid = when (x.sampleMimeType) {
-                            "video/hevc" -> "HEVC"
-                            "video/avc" -> "AVC"
-                            "video/av1" -> "AV1"
-                            "video/vp9" -> "VP9"
-                            "video/vp8" -> "VP8"
-                            else -> "${x.sampleMimeType}"
-                        }
-                        // HD 1914 x 1036
-                        // HD 1906 x 816
-                        // HD 1920 x 804
-                        // SD 662 x 478
-                        val height = x.height
-                        def = when {
-                            height <= 480 -> "480p"
-                            height in 481..720 -> "720p"
-                            height in 721..1080 -> "1080p"
-                            height in 1081..1440 -> "1440p"
-                            height in 1441..2160 -> "4K"
-                            height in 2161..4320 -> "8K"
-                            else -> "$height"
-                        }
-                    } else {
-                        Timber.d("XXX $sampleMimeType")
-                    }
+                val info = FormatInfo(s.getFormat(0))
+                if (info.isAudio()) {
+                    mix = info.audioMixDesc()
+                    enc = info.shortName()
+                } else if (info.isText()) {
+                    sub = info.languageDisplayName()
+                } else if (info.isVideo()) {
+                    vid = info.shortName()
+                    def = info.videoDesc()
                 }
             }
             var info = "$vid $def \u2022 $enc $mix"
