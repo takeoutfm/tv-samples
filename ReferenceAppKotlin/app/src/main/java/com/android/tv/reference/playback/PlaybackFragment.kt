@@ -38,6 +38,7 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.gms.cast.tv.CastReceiverContext
 import timber.log.Timber
 import java.time.Duration
+import java.util.*
 
 /** Fragment that plays video content with ExoPlayer. */
 class PlaybackFragment : VideoSupportFragment() {
@@ -163,25 +164,25 @@ class PlaybackFragment : VideoSupportFragment() {
         val mediaSource = ProgressiveMediaSource.Factory(factory)
             .createMediaSource(item)
 
+        val defaultLanguage = Locale.getDefault().language
+
         trackSelector = DefaultTrackSelector(requireContext())
         trackSelector.parameters = trackSelector.buildUponParameters()
             .setRendererDisabled(C.TRACK_TYPE_TEXT, false)
             .setRendererDisabled(C.TRACK_TYPE_VIDEO, false)
             .setPreferredTextRoleFlags(C.ROLE_FLAG_SUBTITLE)
-            .setPreferredAudioLanguage("en")
-            .setPreferredTextLanguage("en")
+            .setPreferredAudioLanguage(defaultLanguage)
+            .setPreferredTextLanguage(defaultLanguage)
             .setMaxAudioChannelCount(6) // 5.1
             .setPreferredAudioMimeTypes(
-// temp fix for Bravia picking AC3 which are director commentary! See Civil War.
-//                "audio/true-hd",
-//                "audio/vnd.dts.hd",
-//                "audio/vnd.dts",
+                "audio/true-hd",
+                "audio/vnd.dts.hd",
+                "audio/vnd.dts",
                 "audio/ac3",
-//                "audio/mp4a-latm"
+                "audio/mp4a-latm"
             )
             .setPreferredTextLanguageAndRoleFlagsToCaptioningManagerSettings(requireContext())
             .build()
-
 
         exoplayer =
             ExoPlayer.Builder(requireContext())
