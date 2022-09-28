@@ -25,6 +25,8 @@ import com.android.tv.reference.shared.datamodel.*
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Person
 import com.defsub.takeout.client.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -294,7 +296,10 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return Detail(
             id = "takeout://movies/${view.movie.id}/detail",
             uri = "${client!!.endpoint()}${view.location}",
-            headers = mapOf("Authorization" to "Bearer ${userInfo?.mediaToken}"),
+            headers = mapOf(
+                HttpHeaders.Authorization to "Bearer ${userInfo?.mediaToken}",
+                HttpHeaders.UserAgent to client!!.userAgent()
+            ),
             video = toVideo(view.movie),
             genres = view.genres ?: emptyList(),
             cast = view.cast?.map { toCast(it) } ?: emptyList(),

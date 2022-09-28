@@ -76,7 +76,7 @@ class Client(
         return endpoint
     }
 
-    private fun userAgent(): String {
+    fun userAgent(): String {
         return "Takeout/$version (https://defsub.github.io; Android ${Build.VERSION.RELEASE}; TV)"
     }
 
