@@ -15,6 +15,7 @@
  */
 package com.android.tv.reference.playback
 
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
@@ -25,17 +26,20 @@ import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.castconnect.CastHelper
+import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.text.CueGroup
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.SubtitleView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.gms.cast.tv.CastReceiverContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.Duration
 import java.util.*
@@ -106,8 +110,8 @@ class PlaybackFragment : VideoSupportFragment() {
         // text/x-ssa doesn't seem to take the user defaults correctly.
         // Some style elements appear to work
         // -- these don't seem to work
-//        subtitles.setUserDefaultStyle()
-//        subtitles.setUserDefaultTextSize()
+        subtitles.setUserDefaultStyle()
+        subtitles.setUserDefaultTextSize()
 
         if (view is ViewGroup) {
             val root = view as ViewGroup
@@ -152,14 +156,28 @@ class PlaybackFragment : VideoSupportFragment() {
     }
 
     private fun initializePlayer() {
+        var videoUri = ""
+        var headers = emptyMap<String, String>()
+
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                val detail = VideoRepositoryFactory.getVideoRepository().getVideoDetail(video.id);
+                detail?.let {
+                    videoUri = it.uri
+                    headers = it.headers
+                }
+            }
+        }
+
         val factory = DefaultHttpDataSource.Factory()
-        factory.setDefaultRequestProperties(video.headers)
+        factory.setDefaultRequestProperties(headers)
 
         val item = MediaItem.Builder()
             .setMediaMetadata(
-                MediaMetadata.Builder().setTitle(video.name).setSubtitle(video.tagline).build()
+                MediaMetadata.Builder().setTitle(video.name).setSubtitle(video.tagline)
+                    .setArtworkUri(Uri.parse(video.thumbnailUri)).build()
             )
-            .setUri(video.videoUri).build()
+            .setUri(videoUri).build()
 
         val mediaSource = ProgressiveMediaSource.Factory(factory)
             .createMediaSource(item)
@@ -190,7 +208,6 @@ class PlaybackFragment : VideoSupportFragment() {
                 .build()
                 .apply {
                     setMediaSource(mediaSource)
-                    addListener(subtitles!!)
                     prepare()
                     addListener(PlayerEventListener())
                     glue = prepareGlue(this, this@PlaybackFragment.trackSelector)
@@ -287,16 +304,17 @@ class PlaybackFragment : VideoSupportFragment() {
             super.onPlaybackStateChanged(playbackState)
             if (playbackState == Player.STATE_READY) {
                 // available tracks and whether supported, type, and selection
-                val tracksInfo = exoplayer?.currentTracksInfo!!
-                glue.addTrackActions(requireContext(), tracksInfo);
+                val tracks = exoplayer?.currentTracks!!
+                glue.addTrackActions(requireContext(), tracks);
             }
         }
 
-        override fun onTracksChanged(
-            trackGroups: TrackGroupArray,
-            trackSelections: TrackSelectionArray
-        ) {
-            glue.updateTrackSelections(trackSelections)
+        override fun onCues(cueGroup: CueGroup) {
+            subtitles.setCues(cueGroup.cues)
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            glue.updateTrackSelections(tracks)
 
             // audio
             var enc = "None"
@@ -306,19 +324,21 @@ class PlaybackFragment : VideoSupportFragment() {
             // video
             var vid = ""
             var def = ""
-            for (i in 0 until trackSelections.length) {
-                val s = trackSelections[i] ?: continue
-                val info = FormatInfo(s.getFormat(0))
-                if (info.isAudio()) {
-                    mix = info.audioMixDesc()
-                    enc = info.shortName()
-                } else if (info.isText()) {
-                    sub = info.languageDisplayName()
-                } else if (info.isVideo()) {
-                    vid = info.shortName()
-                    def = info.videoDesc()
+            tracks.groups.forEach { group ->
+                if (group.isSelected) {
+                    val info = FormatInfo(group.getTrackFormat(0))
+                    if (info.isAudio()) {
+                        mix = info.audioMixDesc()
+                        enc = info.shortName()
+                    } else if (info.isText()) {
+                        sub = info.languageDisplayName()
+                    } else if (info.isVideo()) {
+                        vid = info.shortName()
+                        def = info.videoDesc()
+                    }
                 }
             }
+
             var info = "$vid $def \u2022 $enc $mix"
             if (sub.isNotEmpty()) {
                 info = "$info \u2022 $sub"
@@ -335,7 +355,11 @@ class PlaybackFragment : VideoSupportFragment() {
                     VideoPlaybackState.End(video)
                 )
                 else -> viewModel.onStateChange(
-                    VideoPlaybackState.Pause(video, exoplayer!!.currentPosition, exoplayer!!.duration)
+                    VideoPlaybackState.Pause(
+                        video,
+                        exoplayer!!.currentPosition,
+                        exoplayer!!.duration
+                    )
                 )
             }
         }

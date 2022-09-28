@@ -24,14 +24,10 @@ import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.PlaybackControlsRow.*
 import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX_OFF
 import androidx.leanback.widget.PlaybackControlsRow.ClosedCaptioningAction.INDEX_ON
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.TracksInfo
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
-import com.google.android.exoplayer2.source.TrackGroup
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray
-import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides
-import com.google.android.exoplayer2.trackselection.TrackSelectionOverrides.TrackSelectionOverride
+import com.google.android.exoplayer2.trackselection.TrackSelectionOverride
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
@@ -114,34 +110,32 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
         }
     }
 
-    fun updateTrackSelections(trackSelections: TrackSelectionArray) {
-        for (i in 0 until trackSelections.length) {
-            val selection = trackSelections[i] ?: continue
-            // selection.type is unset, ugh, need to use mimetype?
-            val selectedTrackGroup = selection.trackGroup
-            val format = selectedTrackGroup.getFormat(0)
-            val mimeType = format.sampleMimeType ?: continue
-            val info = FormatInfo(format)
+    fun updateTrackSelections(tracks: Tracks) {
+        tracks.groups.forEach { group ->
+            if (group.isSelected) {
+                val format = group.getTrackFormat(0)
+                val info = FormatInfo(format)
 
-            if (info.isAudio()) {
-                if (audioAction != null) {
-                    val action = audioAction!!
-                    for (trackIndex in action.trackGroups.indices) {
-                        if (action.trackGroups[trackIndex].id == selectedTrackGroup.id) {
-                            action.index = trackIndex
-                            notifyItemChanged(primaryActionsAdapter, action)
-                            break
+                if (info.isAudio()) {
+                    if (audioAction != null) {
+                        val action = audioAction!!
+                        for (trackIndex in action.trackGroups.indices) {
+                            if (action.trackGroups[trackIndex].equals(group)) {
+                                action.index = trackIndex
+                                notifyItemChanged(primaryActionsAdapter, action)
+                                break
+                            }
                         }
                     }
-                }
-            } else if (info.isText()) {
-                if (textAction != null) {
-                    val action = textAction!!
-                    for (trackIndex in action.trackGroups.indices) {
-                        if (action.trackGroups[trackIndex].id == selectedTrackGroup.id) {
-                            action.index = trackIndex
-                            notifyItemChanged(primaryActionsAdapter, action)
-                            break
+                } else if (info.isText()) {
+                    if (textAction != null) {
+                        val action = textAction!!
+                        for (trackIndex in action.trackGroups.indices) {
+                            if (action.trackGroups[trackIndex].equals(group)) {
+                                action.index = trackIndex
+                                notifyItemChanged(primaryActionsAdapter, action)
+                                break
+                            }
                         }
                     }
                 }
@@ -150,21 +144,19 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
     }
 
     // only call when player state is ready
-    fun addTrackActions(context: Context, tracksInfo: TracksInfo) {
+    fun addTrackActions(context: Context, tracks: Tracks) {
         if (audioAction != null || textAction != null) {
             return
         }
-        val supportedAudio = mutableListOf<TrackGroup>()
-        val supportedText = mutableListOf<TrackGroup>()
-        val trackGroupInfos = tracksInfo.trackGroupInfos
-        for (infosIndex in 0 until trackGroupInfos.size) {
-            val trackInfo = trackGroupInfos[infosIndex]
-            val trackGroup = trackInfo.trackGroup
-            if (trackInfo.isSupported) {
-                if (trackInfo.trackType == C.TRACK_TYPE_AUDIO) {
-                    supportedAudio.add(trackGroup)
-                } else if (trackInfo.trackType == C.TRACK_TYPE_TEXT) {
-                    supportedText.add(trackGroup)
+        val supportedAudio = mutableListOf<Tracks.Group>()
+        val supportedText = mutableListOf<Tracks.Group>()
+        tracks.groups.forEach { group ->
+            val trackInfo = FormatInfo(group.getTrackFormat(0))
+            if (group.isSupported) {
+                if (trackInfo.isAudio()) {
+                    supportedAudio.add(group)
+                } else if (trackInfo.isText()) {
+                    supportedText.add(group)
                 }
             }
         }
@@ -201,13 +193,11 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 //        }
 //    }
 
-    private fun applySelection(action: MultiAction, trackGroup: TrackGroup) {
+    private fun applySelection(action: MultiAction, trackGroup: Tracks.Group) {
         notifyItemChanged(primaryActionsAdapter, action)
-        val overrides = TrackSelectionOverrides.Builder()
-            .setOverrideForType(TrackSelectionOverride(trackGroup))
-            .build()
         trackSelector.parameters =
-            trackSelector.buildUponParameters().setTrackSelectionOverrides(overrides).build()
+            trackSelector.buildUponParameters().setOverrideForType(
+                TrackSelectionOverride(trackGroup.mediaTrackGroup, 0)).build()
     }
 
     private fun showToast(msg: String) {
@@ -222,7 +212,7 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
         action.nextIndex()
         val trackGroup = action.trackGroups[action.index]
         applySelection(action, trackGroup)
-        val info = FormatInfo(trackGroup.getFormat(0))
+        val info = FormatInfo(trackGroup.getTrackFormat(0))
         showToast(
             "%s %s %s (%d/%d)".format(
                 info.shortName(),
@@ -239,7 +229,7 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
         action.nextIndex()
         val trackGroup = action.trackGroups[action.index]
         applySelection(action, trackGroup)
-        val info = FormatInfo(trackGroup.getFormat(0))
+        val info = FormatInfo(trackGroup.getTrackFormat(0))
         showToast(
             "%s (%d/%d)".format(
                 info.languageDisplayName(),
@@ -251,19 +241,17 @@ class ProgressTransportControlGlue<T : PlayerAdapter>(
 
     private fun toggleClosedCaptions() {
         val mappedTrackInfo = trackSelector.currentMappedTrackInfo ?: return
-        val trackGroups = mappedTrackInfo.getTrackGroups(C.TRACK_TYPE_VIDEO)
         if (closedCaptioningAction.index == INDEX_ON) {
             closedCaptioningAction.index = INDEX_OFF
             trackSelector.parameters =
                 trackSelector.buildUponParameters()
-                    .setRendererDisabled(C.TRACK_TYPE_VIDEO, true)
-                    .clearSelectionOverride(C.TRACK_TYPE_VIDEO, trackGroups)
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
                     .build()
 
         } else {
             closedCaptioningAction.index = INDEX_ON
             trackSelector.parameters =
-                trackSelector.buildUponParameters().setRendererDisabled(C.TRACK_TYPE_VIDEO, false)
+                trackSelector.buildUponParameters().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
                     .build()
         }
     }

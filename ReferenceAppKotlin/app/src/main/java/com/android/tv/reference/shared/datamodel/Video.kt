@@ -48,7 +48,6 @@ class Video(
     val episodeNumber: String = "",
     val seasonNumber: String = "",
     val tagline: String = "",
-    val headers: Map<String,String> = mapOf(),
     val rating: String = "",
     val year: Int = -1,
     val vote: Int = 0,

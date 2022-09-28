@@ -39,9 +39,9 @@ class TvReferenceApplication : Application() {
         super.onCreate()
         instance = this
 
-        if (BuildConfig.DEBUG) {
-            enableStrictMode()
-        }
+//        if (BuildConfig.DEBUG) {
+//            enableStrictMode()
+//        }
 
         // TODO(b/162013888): Plant a timber tree for non-debug builds.
         if (BuildConfig.DEBUG) {

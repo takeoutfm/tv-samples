@@ -38,6 +38,27 @@ data class LoginResponse(
 )
 
 @Serializable
+data class Tokens(
+    @SerialName("AccessToken") val accessToken: String,
+    @SerialName("MediaToken") val mediaToken: String,
+    @SerialName("RefreshToken") val refreshToken: String
+)
+
+fun Tokens.valid(): Boolean {
+    return accessToken.isNotEmpty() && mediaToken.isNotEmpty() && refreshToken.isNotEmpty()
+}
+
+@Serializable
+data class RefreshTokens(
+    @SerialName("AccessToken") val accessToken: String,
+    @SerialName("RefreshToken") val refreshToken: String
+)
+
+fun RefreshTokens.valid(): Boolean {
+    return accessToken.isNotEmpty() && refreshToken.isNotEmpty()
+}
+
+@Serializable
 data class Artist(
     @SerialName("ID") val id: Int,
     @SerialName("Name") val name: String,
@@ -99,9 +120,9 @@ fun Track.cover(size: Int = 250): String {
     return ""
 }
 
-fun Track.location(): String {
-    return "/api/tracks/$id/location"
-}
+//fun Track.location(): String {
+//    return "/api/tracks/$uuid/location"
+//}
 
 fun Track.key(): String {
     return etag.replace("\"", "")
@@ -190,10 +211,6 @@ data class Movie(
 
 fun Movie.year(): Int {
     return year(date)
-}
-
-fun Movie.location(): String {
-    return "/api/movies/$id/location"
 }
 
 fun Movie.key(): String {
@@ -315,6 +332,7 @@ data class MoviesView(
 @Serializable
 data class MovieView(
     @SerialName("Movie") val movie: Movie,
+    @SerialName("Location") val location: String,
     @SerialName("Collection") val collection: Collection?,
     @SerialName("Other") val other: List<Movie>?,
     @SerialName("Cast") val cast: List<Cast>?,

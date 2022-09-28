@@ -53,9 +53,17 @@ class TakeoutAuthClient : AuthClient {
         password: String
     ): Result<UserInfo> {
         val client = Client(endpoint)
-        val cookie = client.login(username, password)
-        if (cookie != null) {
-            return Result.Success(UserInfo(cookie, endpoint, username))
+        val tokens = client.login(username, password)
+        if (tokens != null) {
+            return Result.Success(
+                UserInfo(
+                    tokens.accessToken,
+                    tokens.mediaToken,
+                    tokens.refreshToken,
+                    endpoint,
+                    username
+                )
+            )
         }
         return Result.Error(AuthClientError.AuthenticationError)
     }

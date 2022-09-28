@@ -6,6 +6,8 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 class Detail(
     val id: String,
+    val uri: String,
+    val headers: Map<String,String>,
     val video: Video,
     val genres: List<String>,
     val cast: List<Cast>,

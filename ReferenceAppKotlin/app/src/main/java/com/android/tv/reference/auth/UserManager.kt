@@ -38,7 +38,7 @@ class UserManager(
     suspend fun signOut() {
         userInfoLiveData.value?.let {
             // TODO: log server error
-            server.invalidateToken(it.token)
+            server.invalidateToken(it.accessToken)
             clearUserInfo()
         }
     }
@@ -59,7 +59,7 @@ class UserManager(
 
     suspend fun validateToken() {
         userInfoLiveData.value?.let {
-            val result = server.validateToken(it.token)
+            val result = server.validateToken(it.accessToken)
             if (result is Result.Success) {
                 updateUserInfo(result.data)
             } else {
@@ -68,7 +68,7 @@ class UserManager(
         }
     }
 
-    private fun updateUserInfo(userInfo: UserInfo) {
+    fun updateUserInfo(userInfo: UserInfo) {
         userInfoLiveData.postValue(userInfo)
         storage.writeUserInfo(userInfo)
     }

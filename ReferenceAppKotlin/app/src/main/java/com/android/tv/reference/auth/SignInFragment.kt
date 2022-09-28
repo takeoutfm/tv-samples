@@ -86,7 +86,7 @@ class SignInFragment : Fragment() {
             val password = binding.passwordEdit.text.toString()
             viewModel.signInWithPassword(endpoint, username, password)
         }
-        startGoogleOneTapRequest()
+//        startGoogleOneTapRequest()
         return binding.root
     }
 

@@ -18,7 +18,7 @@ package com.android.tv.reference.auth
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.preference.PreferenceManager
+import androidx.security.crypto.*
 import timber.log.Timber
 
 /**
@@ -35,24 +35,42 @@ interface UserInfoStorage {
  * mechanism such as Room.
  */
 class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
-    private val KEY_PREFIX = "userInfo_"
-    private val sharedPreferences: SharedPreferences =
-        PreferenceManager.getDefaultSharedPreferences(context)
+//    private val KEY_PREFIX = "userInfo_"
+    private val KEY_PREFIX = ""
+
+    private var masterKeyAlias: String = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private var sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
+        "userInfo",
+        masterKeyAlias,
+        context,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
+//    private val sharedPreferences: SharedPreferences =
+//        PreferenceManager.getDefaultSharedPreferences(context)
 
     override fun readUserInfo(): UserInfo? {
         Timber.d("readUserInfo!")
-        Timber.d("token is " + getString("token"))
-        return getString("token")?.let { token ->
-            val endpoint = getString("endpoint")
-            val displayName = getString("displayName")
-            return UserInfo(token, endpoint ?: "", displayName ?: "")
+        val accessToken = getString("accessToken") ?: ""
+        val mediaToken = getString("mediaToken") ?: ""
+        val refreshToken = getString("refreshToken") ?: ""
+        val endpoint = getString("endpoint") ?: ""
+        val displayName = getString("displayName")
+        return if (accessToken.isNotEmpty() && mediaToken.isNotEmpty() && refreshToken.isNotEmpty() && endpoint.isNotEmpty()) {
+            UserInfo(accessToken, mediaToken, refreshToken, endpoint ?: "", displayName ?: "")
+        } else {
+            null
         }
     }
 
     override fun writeUserInfo(userInfo: UserInfo) {
+        Timber.d("writeUserInfo %s", userInfo.toString())
         putStrings(
             mapOf(
-                "token" to userInfo.token,
+                "accessToken" to userInfo.accessToken,
+                "mediaToken" to userInfo.mediaToken,
+                "refreshToken" to userInfo.refreshToken,
                 "endpoint" to userInfo.endpoint,
                 "displayName" to userInfo.displayName
             )
@@ -62,7 +80,9 @@ class DefaultUserInfoStorage(context: Context) : UserInfoStorage {
     override fun clearUserInfo() {
         putStrings(
             mapOf(
-                "token" to null,
+                "accessToken" to null,
+                "mediaToken" to null,
+                "refreshToken" to null,
                 "endpoint" to null,
                 "displayName" to null
             )

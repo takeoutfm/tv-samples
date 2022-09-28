@@ -20,8 +20,14 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class UserInfo(
-    @field: Json(name = "token")
-    val token: String,
+    @field: Json(name = "accessToken")
+    val accessToken: String,
+
+    @field: Json(name = "mediaToken")
+    val mediaToken: String,
+
+    @field: Json(name = "refreshToken")
+    val refreshToken: String,
 
     @field: Json(name = "endpoint")
     val endpoint: String,

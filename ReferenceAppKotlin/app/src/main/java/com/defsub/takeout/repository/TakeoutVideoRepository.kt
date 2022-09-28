@@ -33,7 +33,8 @@ import java.util.*
 /**
  * VideoRepository implementation to read video data from a file saved on /res/raw
  */
-class TakeoutVideoRepository(override val application: Application) : VideoRepository {
+class TakeoutVideoRepository(override val application: Application) : VideoRepository,
+    Client.Listener {
 
     private var userInfo: UserInfo? = null
     private var client: Client? = null
@@ -43,7 +44,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private var addedVideos = mutableListOf<Video>()
     private var recommendVideos = mutableListOf<VideoGroup>()
     private var progressMap = mutableMapOf<String, Offset>()
-    private var etags = mutableMapOf<String,Video>()
+    private var etags = mutableMapOf<String, Video>()
 
     private suspend fun signOut() {
         val userManager = UserManager.getInstance(application.applicationContext)
@@ -58,7 +59,9 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
                 val user = userManager.userInfo.value
                 user?.let {
                     userInfo = it
-                    client = Client(it.endpoint, it.token)
+                    client =
+                        Client(it.endpoint, Tokens(it.accessToken, it.mediaToken, it.refreshToken))
+                    client?.addListener(this)
                 }
             }
         } else {
@@ -67,6 +70,18 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             clearCache()
         }
         return signedIn
+    }
+
+    override fun onTokens(tokens: Tokens?) {
+        val userManager = UserManager.getInstance(application.applicationContext)
+        if (tokens != null) {
+            val user = UserInfo(
+                tokens.accessToken, tokens.mediaToken, tokens.refreshToken,
+                userInfo?.endpoint ?: "", userInfo?.displayName ?: ""
+            )
+            userManager.updateUserInfo(user)
+            userInfo = user
+        }
     }
 
     private fun clearCache() {
@@ -79,7 +94,10 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     private suspend fun load() {
         Timber.d("loading...")
-        if (!checkSignedIn()) return
+        if (!checkSignedIn()) {
+            Timber.d("user not signed in...")
+            return
+        }
 
         if (allVideos.isNotEmpty()) {
             Timber.d("already loaded")
@@ -100,7 +118,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             home()
             progress()
         } catch (e: Exception) {
-            Timber.e(e)
+            Timber.e(e, "load error XXX")
             signOut()
         }
     }
@@ -163,10 +181,8 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     // takeout://movies/$id
     override suspend fun getVideoDetail(id: String): Detail? {
         if (!checkSignedIn()) return null
-        var detail: Detail? = null
         val view = client!!.movie(getId(id), 0)
-        detail = toDetail(view)
-        return detail
+        return toDetail(view)
     }
 
     override suspend fun getProfile(id: String): Profile? {
@@ -277,6 +293,8 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private fun toDetail(view: com.defsub.takeout.client.MovieView): Detail {
         return Detail(
             id = "takeout://movies/${view.movie.id}/detail",
+            uri = "${client!!.endpoint()}${view.location}",
+            headers = mapOf("Authorization" to "Bearer ${userInfo?.mediaToken}"),
             video = toVideo(view.movie),
             genres = view.genres ?: emptyList(),
             cast = view.cast?.map { toCast(it) } ?: emptyList(),
@@ -298,7 +316,6 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         val userInfo = userInfo!!
         val posterUrl = "http://image.tmdb.org/t/p/w342/${m.posterPath}"
         val backdropUrl = "http://image.tmdb.org/t/p/w1280/${m.backdropPath}"
-        val locationUrl = "${userInfo.endpoint}${m.location()}"
         val category = category(m.sortTitle)
         val vote = if (m.voteAverage == null) 0 else (m.voteAverage * 10).toInt()
         val uri = "takeout://movies/${m.id}"
@@ -307,7 +324,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             name = m.title,
             description = m.overview,
             uri = uri,
-            videoUri = locationUrl,
+            videoUri = "", // get from detail
             thumbnailUri = posterUrl,
             backgroundImageUri = backdropUrl,
             category = category,
@@ -317,8 +334,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             rating = m.rating,
             duration = m.iso8601(),
             tagline = m.tagline,
-            etag = m.key(),
-            headers = mapOf("Cookie" to "Takeout=${userInfo.token}")
+            etag = m.key()
         )
     }
 

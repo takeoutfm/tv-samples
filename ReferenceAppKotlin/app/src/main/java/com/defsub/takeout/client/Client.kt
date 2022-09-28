@@ -17,24 +17,32 @@
 
 package com.defsub.takeout.client
 
+import android.os.Build
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.net.URLEncoder
 
-class Client(private val endpoint: String = defaultEndpoint,
-             private var cookie: String? = null) {
-    private var client: HttpClient = client()
+class Client(
+    private val endpoint: String = defaultEndpoint,
+    private var tokens: Tokens? = null
+) {
+    private val client: HttpClient = client()
+    private var listener: Listener? = null
+
+    private val version = "0.1"
 
     private fun client(timeout: Long = defaultTimeout): HttpClient {
         return HttpClient {
-            install(JsonFeature) {
-                serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
+            install(ContentNegotiation) {
+                json(Json {
                     isLenient = true
                     ignoreUnknownKeys = true
                     allowSpecialFloatingPointValues = true
@@ -48,137 +56,216 @@ class Client(private val endpoint: String = defaultEndpoint,
                     socketTimeoutMillis = it
                 }
             }
+            expectSuccess = true
         }
+    }
+
+    fun addListener(l: Listener) {
+        listener = l
+    }
+
+    interface Listener {
+        fun onTokens(tokens: Tokens?)
     }
 
     fun close() {
         client.close()
     }
 
+    fun endpoint(): String {
+        return endpoint
+    }
+
+    private fun userAgent(): String {
+        return "Takeout/$version (https://defsub.github.io; Android ${Build.VERSION.RELEASE}; TV)"
+    }
+
     private suspend inline fun <reified T> get(uri: String, ttl: Int? = 0): T {
         Timber.d("get $endpoint$uri")
+        val accessToken = tokens?.accessToken ?: throw IllegalStateException()
         return client.get("$endpoint$uri") {
             accept(ContentType.Application.Json)
-                cookie?.let { header(HttpHeaders.Cookie, "Takeout=$cookie") }
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            header(HttpHeaders.UserAgent, userAgent())
+        }.body()
+    }
+
+    private suspend inline fun <reified T> post(uri: String, body: Any?): T {
+        Timber.d("post $endpoint$uri")
+        val accessToken = tokens?.accessToken ?: throw IllegalStateException()
+        return client.post("$endpoint$uri") {
+            accept(ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            header(HttpHeaders.UserAgent, userAgent())
+            setBody(body)
+        }.body()
+    }
+
+    private suspend inline fun <reified T> retryGet(uri: String, ttl: Int? = 0): T {
+        try {
+           return get(uri, ttl)
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.Unauthorized) {
+                if (refreshTokens()) {
+                    return get(uri, ttl)
+                }
+            }
+            throw e
+        } catch (e: Exception) {
+            throw e
         }
+    }
+
+    private suspend inline fun <reified T> retryPost(uri: String, body: Any?): T {
+        try {
+            return post(uri, body)
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.Unauthorized) {
+                if (refreshTokens()) {
+                    return post(uri, body)
+                }
+            }
+            throw e
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    suspend fun login(user: String, pass: String): Tokens? {
+        Timber.d("post $endpoint/api/token")
+        val body = User(user, pass)
+        val tokens: Tokens? = client.post("$endpoint/api/token") {
+            accept(ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.UserAgent, userAgent())
+            setBody(body)
+        }.body()
+        listener?.onTokens(tokens)
+        return tokens
     }
 
     fun loggedIn(): Boolean {
-        return cookie != null
+        return tokens?.valid() ?: false
     }
 
-    suspend fun login(user: String, pass: String): String? {
-        cookie = null
+    private suspend fun refreshTokens(): Boolean {
+        Timber.d("refreshTokens")
         val client = client()
-        val result: LoginResponse = client.post("$endpoint/api/login") {
+        val mediaToken = tokens?.mediaToken ?: throw IllegalStateException()
+        val refreshToken = tokens?.refreshToken ?: throw IllegalStateException()
+        Timber.d("get $endpoint/api/token")
+        val result: RefreshTokens = client.get("$endpoint/api/token") {
+            accept(ContentType.Application.Json)
             contentType(ContentType.Application.Json)
-            body = User(user, pass)
-        }
-        return if (result.status == 200) {
-            cookie = result.cookie
-            cookie
+            header(HttpHeaders.UserAgent, userAgent())
+            header(HttpHeaders.Authorization, "Bearer $refreshToken")
+        }.body()
+        return if (result.valid()) {
+            tokens = Tokens(
+                accessToken = result.accessToken,
+                refreshToken = result.refreshToken,
+                mediaToken = mediaToken
+            )
+            listener?.onTokens(tokens)
+            true
         } else {
-            null
+            false
         }
     }
 
     suspend fun home(ttl: Int): HomeView {
-        return get("/api/home", ttl)
+        return retryGet("/api/home", ttl)
     }
 
     suspend fun artists(ttl: Int): ArtistsView {
-        return get("/api/artists", ttl)
+        return retryGet("/api/artists", ttl)
     }
 
     suspend fun artist(id: Int, ttl: Int): ArtistView {
-        return get("/api/artist/$id", ttl)
+        return retryGet("/api/artist/$id", ttl)
     }
 
     suspend fun artistSingles(id: Int, ttl: Int): SinglesView {
-        return get("/api/artist/$id/singles", ttl)
+        return retryGet("/api/artist/$id/singles", ttl)
     }
 
     suspend fun artistSinglesPlaylist(id: Int, ttl: Int): Spiff {
-        return get("/api/artist/$id/singles/playlist", ttl)
+        return retryGet("/api/artist/$id/singles/playlist", ttl)
     }
 
     suspend fun artistPopular(id: Int, ttl: Int): PopularView {
-        return get("/api/artist/$id/popular", ttl)
+        return retryGet("/api/artist/$id/popular", ttl)
     }
 
     suspend fun artistPopularPlaylist(id: Int, ttl: Int): Spiff {
-        return get("/api/artist/$id/popular/playlist", ttl)
+        return retryGet("/api/artist/$id/popular/playlist", ttl)
     }
 
     suspend fun artistPlaylist(id: Int, ttl: Int): Spiff {
-        return get("/api/artist/$id/playlist", ttl)
+        return retryGet("/api/artist/$id/playlist", ttl)
     }
 
     suspend fun artistRadio(id: Int, ttl: Int): Spiff {
-        return get("/api/artist/$id/radio", ttl)
+        return retryGet("/api/artist/$id/radio", ttl)
     }
 
     suspend fun release(id: Int, ttl: Int): ReleaseView {
-        return get("/api/releases/$id", ttl)
+        return retryGet("/api/releases/$id", ttl)
     }
 
     suspend fun releasePlaylist(id: Int, ttl: Int): Spiff {
-        return get("/api/releases/$id/playlist", ttl)
+        return retryGet("/api/releases/$id/playlist", ttl)
     }
 
     suspend fun radio(ttl: Int): RadioView {
-        return get("/api/radio", ttl)
+        return retryGet("/api/radio", ttl)
     }
 
     suspend fun station(id: Int, ttl: Int): Spiff {
-        return get("/api/radio/$id", ttl)
+        return retryGet("/api/radio/$id", ttl)
     }
 
     suspend fun movies(ttl: Int): MoviesView {
-        return get("/api/movies", ttl)
+        return retryGet("/api/movies", ttl)
     }
 
     suspend fun movie(id: Int, ttl: Int): MovieView {
-        return get("/api/movies/$id", ttl)
+        return retryGet("/api/movies/$id", ttl)
+    }
+
+    suspend fun moviePlaylist(id: Int, ttl: Int): Spiff {
+        return retryGet("/api/movies/$id/playlist", ttl)
     }
 
     suspend fun profile(id: Int, ttl: Int): ProfileView {
-        return get("/api/profiles/$id", ttl)
+        return retryGet("/api/profiles/$id", ttl)
     }
 
     suspend fun genre(name: String, ttl: Int): GenreView {
-        return get("/api/movies/genres/$name", ttl)
+        return retryGet("/api/movies/genres/$name", ttl)
     }
 
     suspend fun playlist(ttl: Int? = null): Spiff {
-        return get("/api/playlist", ttl)
+        return retryGet("/api/playlist", ttl)
     }
 
     suspend fun search(query: String): SearchView {
         val q = URLEncoder.encode(query, "utf-8")
-        return get("/api/search?q=$q", 0)
+        return retryGet("/api/search?q=$q", 0)
     }
 
     suspend fun progress(ttl: Int): ProgressView {
-        return get("/api/progress", ttl)
+        return retryGet("/api/progress", ttl)
     }
 
     suspend fun updateProgress(offsets: Offsets): Int {
-        val client = client();
-        val response: HttpResponse = client.post("$endpoint/api/progress") {
-            contentType(ContentType.Application.Json)
-            cookie?.let { header(HttpHeaders.Cookie, "Takeout=$cookie") }
-            body = offsets
-        }
-        // 201: created
-        // 205: reset content, newer offset exists
-        // 400: error
-        // 500: error
+        val response: HttpResponse = retryPost("/api/progress", offsets)
         return response.status.value;
     }
 
     companion object {
-        const val defaultEndpoint = "https://takeout.fm"
-        const val defaultTimeout = 30*1000L
+        const val defaultEndpoint = "https://"
+        const val defaultTimeout = 30 * 1000L
     }
 }

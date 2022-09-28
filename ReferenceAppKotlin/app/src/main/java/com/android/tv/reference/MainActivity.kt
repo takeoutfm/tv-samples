@@ -114,62 +114,65 @@ class MainActivity : FragmentActivity() {
                     Timber.w(result.exception, "Failed to load deep link $uri, ignoring")
                     loadStartingPage()
                 }
+                else -> {
+                    loadStartingPage()
+                }
             }
         }
     }
 
-    /**
-     * Chooses whether to show the browse screen or the "no Firebase" notice
-     */
-    private fun loadStartingPage() {
+/**
+ * Chooses whether to show the browse screen or the "no Firebase" notice
+ */
+private fun loadStartingPage() {
 
-        @Suppress("ConstantConditionIf")
-        if (BuildConfig.FIREBASE_ENABLED) {
-            Timber.d("Firebase is enabled, loading browse")
+    @Suppress("ConstantConditionIf")
+    if (BuildConfig.FIREBASE_ENABLED) {
+        Timber.d("Firebase is enabled, loading browse")
 //            navGraph.startDestination = R.id.browseFragment
-        } else {
-            Timber.d("Firebase is not enabled; loading browse")
+    } else {
+        Timber.d("Firebase is not enabled; loading browse")
 //            navGraph.startDestination = R.id.noFirebaseFragment
 //            navGraph.startDestination = R.id.browseFragment
-        }
-
-        // Set the graph to trigger loading the start destination
-        navController.graph = navGraph
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        setIntent(intent)
+    // Set the graph to trigger loading the start destination
+    navController.graph = navGraph
+}
 
-        if (intent == null) {
-            return
-        }
+override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    setIntent(intent)
 
-        // Return early if intent is a valid Cast intent and is processed by the Cast SDK.
-        if (castHelper.validateAndProcessCastIntent(intent)) {
-            return
-        }
-
-        // Include logic to process other types of intents here, if any.
+    if (intent == null) {
+        return
     }
 
-    private fun loadPlaybackFragment(video: Video) {
-        // Set the default graph and go to playback for the loaded Video
-        navController.graph = navGraph
-        navController.navigate(
-            BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(
-                video
-            )
+    // Return early if intent is a valid Cast intent and is processed by the Cast SDK.
+    if (castHelper.validateAndProcessCastIntent(intent)) {
+        return
+    }
+
+    // Include logic to process other types of intents here, if any.
+}
+
+private fun loadPlaybackFragment(video: Video) {
+    // Set the default graph and go to playback for the loaded Video
+    navController.graph = navGraph
+    navController.navigate(
+        BrowseFragmentDirections.actionBrowseFragmentToPlaybackFragment(
+            video
         )
-    }
+    )
+}
 
-    private fun loadDetailsFragment(video: Video) {
-        // Set the default graph and go to details for the loaded Video
-        navController.graph = navGraph
-        navController.navigate(
-            BrowseFragmentDirections.actionBrowseFragmentToDetailsFragment(
-                video
-            )
+private fun loadDetailsFragment(video: Video) {
+    // Set the default graph and go to details for the loaded Video
+    navController.graph = navGraph
+    navController.navigate(
+        BrowseFragmentDirections.actionBrowseFragmentToDetailsFragment(
+            video
         )
-    }
+    )
+}
 }
