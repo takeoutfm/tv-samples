@@ -19,8 +19,6 @@ import com.android.tv.reference.playback.PlaybackStateListener
 import com.android.tv.reference.playback.VideoPlaybackState
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Progress
-import com.defsub.takeout.client.Client
-import com.defsub.takeout.client.Offset
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

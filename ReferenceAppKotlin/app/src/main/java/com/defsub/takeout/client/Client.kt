@@ -77,7 +77,7 @@ class Client(
     }
 
     fun userAgent(): String {
-        return "Takeout/$version (https://defsub.github.io; Android ${Build.VERSION.RELEASE}; TV)"
+        return "Takeout-TV/$version (https://defsub.github.io; Android ${Build.VERSION.RELEASE}; TV)"
     }
 
     private suspend inline fun <reified T> get(uri: String, ttl: Int? = 0): T {
@@ -155,22 +155,31 @@ class Client(
         val mediaToken = tokens?.mediaToken ?: throw IllegalStateException()
         val refreshToken = tokens?.refreshToken ?: throw IllegalStateException()
         Timber.d("get $endpoint/api/token")
-        val result: RefreshTokens = client.get("$endpoint/api/token") {
-            accept(ContentType.Application.Json)
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.UserAgent, userAgent())
-            header(HttpHeaders.Authorization, "Bearer $refreshToken")
-        }.body()
-        return if (result.valid()) {
-            tokens = Tokens(
-                accessToken = result.accessToken,
-                refreshToken = result.refreshToken,
-                mediaToken = mediaToken
-            )
-            listener?.onTokens(tokens)
-            true
-        } else {
-            false
+        try {
+            val result: RefreshTokens = client.get("$endpoint/api/token") {
+                accept(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.UserAgent, userAgent())
+                header(HttpHeaders.Authorization, "Bearer $refreshToken")
+            }.body()
+            return if (result.valid()) {
+                tokens = Tokens(
+                    accessToken = result.accessToken,
+                    refreshToken = result.refreshToken,
+                    mediaToken = mediaToken
+                )
+                listener?.onTokens(tokens)
+                true
+            } else {
+                false
+            }
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.Unauthorized) {
+                // refresh token no longer valid
+                tokens = null
+                listener?.onTokens(null)
+            }
+            return false
         }
     }
 

@@ -25,8 +25,8 @@ import com.android.tv.reference.shared.datamodel.*
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Person
 import com.defsub.takeout.client.*
-import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -62,7 +62,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
                 user?.let {
                     userInfo = it
                     client =
-                        Client(it.endpoint, Tokens(it.accessToken, it.mediaToken, it.refreshToken))
+                        Client(
+                            endpoint = it.endpoint,
+                            tokens = Tokens(
+                                accessToken = it.accessToken,
+                                mediaToken = it.mediaToken,
+                                refreshToken = it.refreshToken
+                            )
+                        )
                     client?.addListener(this)
                 }
             }
@@ -78,11 +85,18 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         val userManager = UserManager.getInstance(application.applicationContext)
         if (tokens != null) {
             val user = UserInfo(
-                tokens.accessToken, tokens.mediaToken, tokens.refreshToken,
-                userInfo?.endpoint ?: "", userInfo?.displayName ?: ""
+                accessToken = tokens.accessToken,
+                mediaToken = tokens.mediaToken,
+                refreshToken = tokens.refreshToken,
+                endpoint = userInfo?.endpoint ?: "",
+                displayName = userInfo?.displayName ?: ""
             )
             userManager.updateUserInfo(user)
             userInfo = user
+        } else {
+            runBlocking {
+                userManager.signOut()
+            }
         }
     }
 
@@ -274,13 +288,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     private fun toPerson(p: com.defsub.takeout.client.Person): Person {
+        val endpoint = userInfo?.endpoint ?: ""
         return Person(
             id = "takeout://people/${p.id}",
             name = p.name,
             bio = p.bio ?: "",
             birthplace = p.birthplace ?: "",
             birthday = p.year(),
-            thumbnailUri = "http://image.tmdb.org/t/p/w185/${p.profilePath}"
+            thumbnailUri = "$endpoint/img/tm/w185${p.profilePath}"
         )
     }
 
@@ -318,9 +333,9 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     private fun toVideo(m: Movie): Video {
-        val userInfo = userInfo!!
-        val posterUrl = "http://image.tmdb.org/t/p/w342/${m.posterPath}"
-        val backdropUrl = "http://image.tmdb.org/t/p/w1280/${m.backdropPath}"
+        val endpoint = userInfo?.endpoint ?: ""
+        val posterUrl = "$endpoint/img/tm/w342${m.posterPath}"
+        val backdropUrl = "$endpoint/img/tm/w1280${m.backdropPath}"
         val category = category(m.sortTitle)
         val vote = if (m.voteAverage == null) 0 else (m.voteAverage * 10).toInt()
         val uri = "takeout://movies/${m.id}"

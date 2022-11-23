@@ -57,11 +57,11 @@ class TakeoutAuthClient : AuthClient {
         if (tokens != null) {
             return Result.Success(
                 UserInfo(
-                    tokens.accessToken,
-                    tokens.mediaToken,
-                    tokens.refreshToken,
-                    endpoint,
-                    username
+                    accessToken = tokens.accessToken,
+                    mediaToken = tokens.mediaToken,
+                    refreshToken = tokens.refreshToken,
+                    endpoint = endpoint,
+                    displayName = username
                 )
             )
         }
