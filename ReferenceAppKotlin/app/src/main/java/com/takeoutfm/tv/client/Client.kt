@@ -37,7 +37,7 @@ class Client(
     private val client: HttpClient = client()
     private var listener: Listener? = null
 
-    private val version = "0.1"
+    private val version = "0.2.0"
 
     private fun client(timeout: Long = defaultTimeout): HttpClient {
         return HttpClient {
@@ -77,7 +77,7 @@ class Client(
     }
 
     fun userAgent(): String {
-        return "Takeout-TV/$version (https://defsub.github.io; Android ${Build.VERSION.RELEASE}; TV)"
+        return "Takeout-TV/$version (takeoutfm.com; Android ${Build.VERSION.RELEASE})"
     }
 
     private suspend inline fun <reified T> get(uri: String, ttl: Int? = 0): T {
