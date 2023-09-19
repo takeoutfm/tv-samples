@@ -21,8 +21,8 @@ import android.view.ViewGroup
 import androidx.leanback.widget.Presenter
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
-import com.defsub.takeout.tv.R
-import com.defsub.takeout.tv.databinding.PresenterVideoCardBinding
+import com.takeoutfm.tv.R
+import com.takeoutfm.tv.databinding.PresenterVideoCardBinding
 import com.squareup.picasso.Picasso
 
 /**

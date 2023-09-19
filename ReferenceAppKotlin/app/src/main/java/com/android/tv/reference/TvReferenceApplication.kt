@@ -21,7 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.defsub.takeout.tv.BuildConfig
+import com.takeoutfm.tv.BuildConfig
 import com.google.android.gms.cast.tv.CastReceiverContext
 import timber.log.Timber
 

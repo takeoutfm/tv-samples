@@ -24,8 +24,8 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.shared.datamodel.Video
-import com.defsub.takeout.tv.R
-import com.defsub.takeout.tv.databinding.FragmentPlaybackErrorBinding
+import com.takeoutfm.tv.R
+import com.takeoutfm.tv.databinding.FragmentPlaybackErrorBinding
 
 /** Displays an error to the user when something unexpected occurred during playback. */
 class PlaybackErrorFragment : Fragment() {

@@ -20,8 +20,8 @@ import android.view.ViewGroup
 import androidx.leanback.widget.Presenter
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Video
-import com.defsub.takeout.tv.R
-import com.defsub.takeout.tv.databinding.PresenterCastCardBinding
+import com.takeoutfm.tv.R
+import com.takeoutfm.tv.databinding.PresenterCastCardBinding
 import com.squareup.picasso.Picasso
 import timber.log.Timber
 

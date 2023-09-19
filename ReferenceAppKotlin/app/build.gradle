@@ -30,7 +30,7 @@ android {
     compileSdkVersion 33
 
     defaultConfig {
-        applicationId "com.defsub.takeout.tv"
+        applicationId "com.takeoutfm.tv"
         minSdkVersion 26
         targetSdkVersion 33
         versionCode 1

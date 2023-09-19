@@ -19,7 +19,7 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.android.tv.reference.shared.util.Result
-import com.defsub.takeout.tv.R
+import com.takeoutfm.tv.R
 import com.google.android.gms.auth.api.identity.SignInCredential
 
 /**

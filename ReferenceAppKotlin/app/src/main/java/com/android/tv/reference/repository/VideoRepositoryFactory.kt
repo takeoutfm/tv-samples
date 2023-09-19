@@ -16,7 +16,7 @@
 package com.android.tv.reference.repository
 
 import com.android.tv.reference.TvReferenceApplication
-import com.defsub.takeout.repository.TakeoutVideoRepository
+import com.takeoutfm.tv.repository.TakeoutVideoRepository
 
 /**
  * Class to create a VideoRepository implementation according to specific requirements.

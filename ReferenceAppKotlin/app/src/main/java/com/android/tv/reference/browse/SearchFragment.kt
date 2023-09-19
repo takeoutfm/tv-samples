@@ -9,7 +9,7 @@ import androidx.leanback.widget.*
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
-import com.defsub.takeout.tv.R
+import com.takeoutfm.tv.R
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.coroutineContext

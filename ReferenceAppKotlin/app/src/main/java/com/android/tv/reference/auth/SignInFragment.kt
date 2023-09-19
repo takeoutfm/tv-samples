@@ -26,8 +26,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.auth.SignInViewModel.SignInStatus
-import com.defsub.takeout.tv.R
-import com.defsub.takeout.tv.databinding.FragmentSignInBinding
+import com.takeoutfm.tv.R
+import com.takeoutfm.tv.databinding.FragmentSignInBinding
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.ConnectionResult

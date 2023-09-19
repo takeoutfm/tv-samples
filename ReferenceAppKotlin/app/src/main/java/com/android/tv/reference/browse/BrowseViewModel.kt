@@ -100,16 +100,23 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
         val watchProgressRepository =
             WatchProgressRepository(watchProgressDatabase.watchProgressDao())
         val progress = videoRepository.getProgress()
+        val now = System.currentTimeMillis()
+        // only include last 30 days in watch next
+        val since = (24*60*60*1000) * 30L;
         progress.forEach { p ->
-            val video = videoRepository.getVideoById(p.id)
-            video?.let {
-                watchProgressRepository.insert(
-                    WatchProgress(
-                        videoId = p.id,
-                        startPosition = p.position,
-                        modifiedAt = p.timestamp
+            if (now - p.timestamp <= since) {
+                val video = videoRepository.getVideoById(p.id)
+                video?.let {
+                    watchProgressRepository.insert(
+                        WatchProgress(
+                            videoId = p.id,
+                            startPosition = p.position,
+                            modifiedAt = p.timestamp
+                        )
                     )
-                )
+                }
+            } else {
+                watchProgressRepository.deleteWatchProgress(p.id)
             }
         }
     }

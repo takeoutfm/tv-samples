@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Takeout.  If not, see <https://www.gnu.org/licenses/>.
 
-package com.defsub.takeout.repository
+package com.takeoutfm.tv.repository
 
 import android.app.Application
 import com.android.tv.reference.auth.UserInfo
@@ -24,7 +24,7 @@ import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.shared.datamodel.*
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Person
-import com.defsub.takeout.client.*
+import com.takeoutfm.tv.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
@@ -238,14 +238,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         df.timeZone = TimeZone.getTimeZone("UTC")
 
         val list = mutableListOf<Offset>()
-        progress.forEach { progress ->
-            val video = getVideoById(progress.id)
+        progress.forEach { p ->
+            val video = getVideoById(p.id)
             if (video != null) {
-                val date = df.format(Date(progress.timestamp))
+                val date = df.format(Date(p.timestamp))
                 val offset = Offset(
                     etag = video.etag,
-                    offset = (progress.position / 1000).toInt(),
-                    duration = (progress.duration?.div(1000))?.toInt(),
+                    offset = (p.position / 1000).toInt(),
+                    duration = (p.duration?.div(1000))?.toInt(),
                     date = date
                 )
 //                Timber.d("updateProgress ${offset.etag} ${offset.date} ${Date(progress.timestamp)}")
@@ -279,7 +279,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return list
     }
 
-    private fun toProfile(p: com.defsub.takeout.client.ProfileView): Profile {
+    private fun toProfile(p: com.takeoutfm.tv.client.ProfileView): Profile {
         return Profile(
             id = "takeout://people/${p.person.id}/profile",
             person = toPerson(p.person),
@@ -287,7 +287,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
-    private fun toPerson(p: com.defsub.takeout.client.Person): Person {
+    private fun toPerson(p: com.takeoutfm.tv.client.Person): Person {
         val endpoint = userInfo?.endpoint ?: ""
         return Person(
             id = "takeout://people/${p.id}",
@@ -299,7 +299,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
-    private fun toCast(c: com.defsub.takeout.client.Cast): Cast {
+    private fun toCast(c: com.takeoutfm.tv.client.Cast): Cast {
         return Cast(
             id = "takeout://cast/${c.id}",
             person = toPerson(c.person),
@@ -307,7 +307,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
-    private fun toDetail(view: com.defsub.takeout.client.MovieView): Detail {
+    private fun toDetail(view: com.takeoutfm.tv.client.MovieView): Detail {
         return Detail(
             id = "takeout://movies/${view.movie.id}/detail",
             uri = "${client!!.endpoint()}${view.location}",

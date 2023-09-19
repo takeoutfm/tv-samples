@@ -18,7 +18,7 @@ package com.android.tv.reference.browse
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.leanback.widget.Presenter
-import com.defsub.takeout.tv.databinding.PresenterMenuItemBinding
+import com.takeoutfm.tv.databinding.PresenterMenuItemBinding
 
 /**
  * Presenter for displaying text in a grid, useful for custom menus and navigation.

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Takeout.  If not, see <https://www.gnu.org/licenses/>.
 
-package com.defsub.takeout.client
+package com.takeoutfm.tv.client
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

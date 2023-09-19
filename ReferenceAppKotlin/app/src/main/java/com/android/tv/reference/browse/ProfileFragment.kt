@@ -9,7 +9,7 @@ import androidx.leanback.widget.*
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
-import com.defsub.takeout.tv.R
+import com.takeoutfm.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 

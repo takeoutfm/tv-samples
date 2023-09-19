@@ -31,8 +31,8 @@ import com.android.tv.reference.deeplink.DeepLinkViewModel
 import com.android.tv.reference.deeplink.DeepLinkViewModelFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.util.Result
-import com.defsub.takeout.tv.BuildConfig
-import com.defsub.takeout.tv.R
+import com.takeoutfm.tv.BuildConfig
+import com.takeoutfm.tv.R
 import timber.log.Timber
 
 /**

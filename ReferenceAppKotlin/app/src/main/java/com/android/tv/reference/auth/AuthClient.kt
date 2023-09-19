@@ -16,7 +16,7 @@
 package com.android.tv.reference.auth
 
 import com.android.tv.reference.shared.util.Result
-import com.defsub.takeout.client.Client
+import com.takeoutfm.tv.client.Client
 
 /**
  * The authority that verifies the user's identity based on an existing token or credentials.

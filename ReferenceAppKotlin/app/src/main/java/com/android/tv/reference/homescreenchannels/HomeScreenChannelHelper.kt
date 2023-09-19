@@ -31,7 +31,7 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
-import com.defsub.takeout.tv.R
+import com.takeoutfm.tv.R
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
@@ -120,7 +120,7 @@ class HomeScreenChannelHelper(private val previewChannelHelper: PreviewChannelHe
 
     fun cleanup() {
         previewChannelHelper.allChannels.forEach {
-            if (it.packageName == "com.defsub.takeout.tv") {
+            if (it.packageName == "com.takeoutfm.tv") {
                 previewChannelHelper.deletePreviewChannel(it.id)
             }
         }

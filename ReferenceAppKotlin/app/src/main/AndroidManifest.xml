@@ -15,7 +15,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.defsub.takeout.tv">
+    package="com.takeoutfm.tv">
 
     <!-- Access internet-based media -->
     <uses-permission android:name="android.permission.INTERNET" />
