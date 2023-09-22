@@ -17,6 +17,8 @@
 
 ADB = adb
 
+APKSIGNER = apksigner
+
 GRADLE = ./gradlew
 
 GIT_VERSION ?= $(shell git log --format="%h" -n 1)
@@ -46,6 +48,9 @@ install-release: release
 
 ${RELEASE_APK}:
 	${GRADLE} assembleRelease
+
+verify:
+	${APKSIGNER} verify --verbose --print-certs ${RELEASE_APK}
 
 clean:
 	rm -f ${DEBUG_APK}
