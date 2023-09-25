@@ -25,9 +25,9 @@ GRADLE = ./gradlew
 
 GIT_VERSION ?= $(shell git log --format="%h" -n 1)
 
-DEBUG_APK = ./build/app/outputs/apk/debug/app-debug.apk
+DEBUG_APK = ./app/build/outputs/apk/debug/app-debug.apk
 
-RELEASE_APK = ./build/app/outputs/apk/release/app-release.apk
+RELEASE_APK = ./app/build/outputs/apk/release/app-release.apk
 
 ASSETS = ./assets
 
