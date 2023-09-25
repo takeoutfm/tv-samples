@@ -31,6 +31,8 @@ RELEASE_APK = ./app/build/outputs/apk/release/app-release.apk
 
 ASSETS = ./assets
 
+.PHONY: all clean release assets
+
 all: debug
 
 install: install-debug
