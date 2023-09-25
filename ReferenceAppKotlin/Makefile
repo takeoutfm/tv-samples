@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Takeout.  If not, see <https://www.gnu.org/licenses/>.
 
+VERSION = $(shell cat .version)
+
 ADB = adb
 
 APKSIGNER = apksigner
@@ -26,6 +28,8 @@ GIT_VERSION ?= $(shell git log --format="%h" -n 1)
 DEBUG_APK = ./build/app/outputs/apk/debug/app-debug.apk
 
 RELEASE_APK = ./build/app/outputs/apk/release/app-release.apk
+
+ASSETS = ./assets
 
 all: debug
 
@@ -41,8 +45,6 @@ ${DEBUG_APK}:
 
 release: ${RELEASE_APK}
 
-# sign
-
 install-release: release
 	${ADB} install ${RELEASE_APK}
 
@@ -55,4 +57,16 @@ verify:
 clean:
 	rm -f ${DEBUG_APK}
 	rm -f ${RELEASE_APK}
+	rm -rf ${ASSETS}
 	${GRADLE} clean
+
+tag:
+	git tag --list | grep -q v${VERSION} || git tag v${VERSION}
+	git push origin v${VERSION}
+
+assets:
+	mkdir ${ASSETS}
+	cp ${RELEASE_APK} ${ASSETS}/com.takeoutfm.tv-${VERSION}.apk
+
+version:
+	scripts/version.sh && git commit -a
