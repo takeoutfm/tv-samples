@@ -67,7 +67,7 @@ tag:
 	git push origin v${VERSION}
 
 assets:
-	mkdir ${ASSETS}
+	mkdir -p ${ASSETS}
 	cp ${RELEASE_APK} ${ASSETS}/com.takeoutfm.tv-${VERSION}.apk
 
 version:
