@@ -39,8 +39,8 @@ android {
         applicationId "com.takeoutfm.tv"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 2100 // #versionCode#
-        versionName "0.2.1" // #version#
+        versionCode 300 // #versionCode#
+        versionName "0.3.0" // #version#
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testOptions.unitTests.includeAndroidResources = true
