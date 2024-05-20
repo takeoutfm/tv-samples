@@ -16,6 +16,7 @@
 package com.android.tv.reference.auth
 
 import com.android.tv.reference.shared.util.Result
+import com.takeoutfm.tv.client.AccessCode
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
@@ -40,6 +41,15 @@ class RemoteAuthClient : AuthClient {
 
     override suspend fun authWithPassword(endpoint: String, username: String, password: String) =
         wrapResult { service.authWithPassword(username, password) }
+
+    override suspend fun requestAccessCode(endpoint: String): Result<AccessCode> =
+        wrapResult { service.requestAccessCode(endpoint) }
+
+    override suspend fun authWithAccessCode(
+        endpoint: String,
+        accessCode: AccessCode
+    ): Result<UserInfo> =
+        wrapResult { service.authWithAccessCode(endpoint, accessCode) }
 
     override suspend fun authWithGoogleIdToken(idToken: String) =
         wrapResult { service.authWithGoogleIdToken(idToken) }
@@ -66,5 +76,9 @@ class RemoteAuthClient : AuthClient {
 
         @POST("/invalidateToken")
         suspend fun invalidateToken(@Body token: String): Unit
+
+        suspend fun requestAccessCode(endpoint: String): AccessCode
+
+        suspend fun authWithAccessCode(endpoint: String,accessCode: AccessCode): UserInfo
     }
 }

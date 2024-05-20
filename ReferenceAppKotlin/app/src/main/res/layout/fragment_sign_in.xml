@@ -28,51 +28,90 @@
         android:layout_height="wrap_content"
         android:text="@string/sign_in" />
 
-<!--    <TextView-->
-<!--        android:id="@+id/sign_in_intro"-->
-<!--        style="@style/Body"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginBottom="20dp" />-->
+    <!--    <TextView-->
+    <!--        android:id="@+id/sign_in_intro"-->
+    <!--        style="@style/Body"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_marginBottom="20dp" />-->
 
-    <EditText
-        android:id="@+id/endpoint_edit"
+    <!--
+        <EditText
+            android:id="@+id/username_edit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="username"
+            android:hint="@string/email"
+            android:importantForAutofill="yes"
+            android:inputType="textEmailAddress"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <EditText
+            android:id="@+id/password_edit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="password"
+            android:hint="@string/password"
+            android:importantForAutofill="yes"
+            android:inputType="textPassword"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+    -->
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:autofillHints="endpoint"
-        android:text="@string/endpoint"
-        android:importantForAutofill="yes"
-        android:inputType="textUri"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+        android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/username_edit"
+        <EditText
+            android:id="@+id/endpoint_edit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_weight="0.2"
+            android:autofillHints="endpoint"
+            android:importantForAutofill="yes"
+            android:inputType="textUri"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/endpoint" />
+
+        <Button
+            android:id="@+id/obtain_code_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:layout_gravity="end"
+            android:text="@string/obtain_code" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/code"
+        android:paddingTop="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:autofillHints="username"
-        android:hint="@string/email"
-        android:importantForAutofill="yes"
-        android:inputType="textEmailAddress"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+        android:textAlignment="center"
+        android:text=""
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        />
 
-    <EditText
-        android:id="@+id/password_edit"
+    <TextView
+        android:id="@+id/code_text"
+        android:paddingBottom="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:autofillHints="password"
-        android:hint="@string/password"
-        android:importantForAutofill="yes"
-        android:inputType="textPassword"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+        android:textAlignment="center"
+        android:text=""
+        />
 
     <Button
         android:id="@+id/sign_in_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end"
+        android:layout_gravity="center"
+        android:enabled="false"
         android:text="@string/sign_in" />
 
     <TextView

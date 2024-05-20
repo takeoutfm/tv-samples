@@ -1,19 +1,19 @@
-// Copyright (C) 2021 The Takeout Authors.
+// Copyright (C) 2021 defsub
 //
-// This file is part of Takeout.
+// This file is part of TakeoutFM.
 //
-// Takeout is free software: you can redistribute it and/or modify it under the
+// TakeoutFM is free software: you can redistribute it and/or modify it under the
 // terms of the GNU Affero General Public License as published by the Free
 // Software Foundation, either version 3 of the License, or (at your option)
 // any later version.
 //
-// Takeout is distributed in the hope that it will be useful, but WITHOUT ANY
+// TakeoutFM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for
 // more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with Takeout.  If not, see <https://www.gnu.org/licenses/>.
+// along with TakeoutFM.  If not, see <https://www.gnu.org/licenses/>.
 
 package com.takeoutfm.tv.client
 
@@ -46,6 +46,16 @@ data class Tokens(
 
 fun Tokens.valid(): Boolean {
     return accessToken.isNotEmpty() && mediaToken.isNotEmpty() && refreshToken.isNotEmpty()
+}
+
+@Serializable
+data class AccessCode(
+    @SerialName("Code") val code: String,
+    @SerialName("AccessToken") val accessToken: String,
+)
+
+fun AccessCode.isEmpty(): Boolean {
+    return code.isEmpty() || accessToken.isEmpty()
 }
 
 @Serializable

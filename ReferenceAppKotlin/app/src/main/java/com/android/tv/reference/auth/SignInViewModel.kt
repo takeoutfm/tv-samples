@@ -24,6 +24,8 @@ import com.android.tv.reference.shared.util.Result
 import com.google.android.gms.auth.api.identity.SignInCredential
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
+import com.takeoutfm.tv.client.AccessCode
+import com.takeoutfm.tv.client.isEmpty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -31,6 +33,9 @@ class SignInViewModel(private val userManager: UserManager) :
     ViewModel() {
     private val signInStatusMutable = MutableLiveData<SignInStatus>()
     val signInStatus: LiveData<SignInStatus> = signInStatusMutable
+
+    private val accessCodeMutable = MutableLiveData<AccessCode>()
+    val accessCode: LiveData<AccessCode> = accessCodeMutable
 
     fun signInWithPassword(endpoint: String, username: String, password: String) {
         if (endpoint.isEmpty() || username.isEmpty() || password.isEmpty()) {
@@ -42,17 +47,59 @@ class SignInViewModel(private val userManager: UserManager) :
         }
     }
 
+    fun obtainAccessCode(endpoint: String) {
+        if (endpoint.isEmpty()) {
+            signInStatusMutable.value = SignInStatus.Error.InputError
+        } else {
+            viewModelScope.launch(Dispatchers.IO) {
+                when (val result = userManager.requestAccessCode(endpoint)) {
+                    is Result.Success<AccessCode> -> {
+                        accessCodeMutable.postValue(result.data)
+                    }
+                    is Result.Error -> {
+                        signInStatusMutable.postValue(SignInStatus.Error.ServerError)
+                    }
+                }
+            }
+        }
+    }
+
+    fun signInWithAccessCode(endpoint: String, accessCode: AccessCode) {
+        if (endpoint.isEmpty() || accessCode.isEmpty()) {
+            signInStatusMutable.value = SignInStatus.Error.InputError
+        } else {
+            viewModelScope.launch(Dispatchers.IO) {
+                signInStatusMutable.postValue(authWithAccessCode(endpoint, accessCode))
+            }
+        }
+    }
+
     fun signInWithOneTap(credential: SignInCredential) =
         viewModelScope.launch(Dispatchers.IO) {
             signInStatusMutable.postValue(authWithOneTapCredential(credential))
         }
 
-    private suspend fun authWithPassword(endpoint: String, username: String, password: String): SignInStatus =
+    private suspend fun authWithPassword(
+        endpoint: String,
+        username: String,
+        password: String
+    ): SignInStatus =
         when (val result = userManager.authWithPassword(endpoint, username, password)) {
             is Result.Success -> SignInStatus.ShouldSavePassword(username, password)
             is Result.Error -> {
                 when (result.exception) {
                     is AuthClientError.AuthenticationError -> SignInStatus.Error.InvalidPassword
+                    else -> SignInStatus.Error.ServerError
+                }
+            }
+        }
+
+    private suspend fun authWithAccessCode(endpoint: String, accessCode: AccessCode): SignInStatus =
+        when (val result = userManager.authWithAccessCode(endpoint, accessCode)) {
+            is Result.Success -> SignInStatus.Success
+            is Result.Error -> {
+                when (result.exception) {
+                    is AuthClientError.AuthenticationError -> SignInStatus.Error.InvalidAccessCode
                     else -> SignInStatus.Error.ServerError
                 }
             }
@@ -65,7 +112,12 @@ class SignInViewModel(private val userManager: UserManager) :
     private suspend fun authWithOneTapCredential(credential: SignInCredential) =
         when {
             credential.googleIdToken != null -> authWithGoogleIdToken(credential)
-            credential.password != null -> authWithPassword("????", credential.id, credential.password!!)
+            credential.password != null -> authWithPassword(
+                "????",
+                credential.id,
+                credential.password!!
+            )
+
             else -> SignInStatus.Error.OneTapInvalid
         }
 
@@ -89,6 +141,7 @@ class SignInViewModel(private val userManager: UserManager) :
         sealed class Error : SignInStatus() {
             object InputError : Error()
             object InvalidPassword : Error()
+            object InvalidAccessCode : Error()
             object ServerError : Error()
             object OneTapInvalid : Error()
             class OneTapError(val exception: Exception) : Error()

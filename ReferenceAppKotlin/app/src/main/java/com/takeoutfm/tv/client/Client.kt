@@ -1,19 +1,19 @@
-// Copyright (C) 2021 The Takeout Authors.
+// Copyright (C) 2021 defsub
 //
-// This file is part of Takeout.
+// This file is part of TakeoutFM.
 //
-// Takeout is free software: you can redistribute it and/or modify it under the
+// TakeoutFM is free software: you can redistribute it and/or modify it under the
 // terms of the GNU Affero General Public License as published by the Free
 // Software Foundation, either version 3 of the License, or (at your option)
 // any later version.
 //
-// Takeout is distributed in the hope that it will be useful, but WITHOUT ANY
+// TakeoutFM is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for
 // more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with Takeout.  If not, see <https://www.gnu.org/licenses/>.
+// along with TakeoutFM.  If not, see <https://www.gnu.org/licenses/>.
 
 package com.takeoutfm.tv.client
 
@@ -66,6 +66,7 @@ class Client(
 
     interface Listener {
         fun onTokens(tokens: Tokens?)
+        fun onAccessCode(accessCode: AccessCode?)
     }
 
     fun close() {
@@ -77,7 +78,7 @@ class Client(
     }
 
     fun userAgent(): String {
-        return "Takeout-TV/$version (takeoutfm.com; Android ${Build.VERSION.RELEASE})"
+        return "TakeoutFM-TV/$version (takeoutfm.com; Android ${Build.VERSION.RELEASE})"
     }
 
     private suspend inline fun <reified T> get(uri: String, ttl: Int? = 0): T {
@@ -143,6 +144,40 @@ class Client(
         }.body()
         listener?.onTokens(tokens)
         return tokens
+    }
+
+    suspend fun code(): AccessCode? {
+        return try {
+            Timber.d("get $endpoint/api/code")
+            val accessCode: AccessCode? = client.get("$endpoint/api/code") {
+                accept(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.UserAgent, userAgent())
+            }.body()
+            listener?.onAccessCode(accessCode)
+            accessCode
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
+    }
+
+    suspend fun checkCode(accessCode: AccessCode): Tokens? {
+        return try {
+            Timber.d("post $endpoint/api/code")
+            val tokens: Tokens? = client.post("$endpoint/api/code") {
+                accept(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.UserAgent, userAgent())
+                header(HttpHeaders.Authorization, "Bearer ${accessCode.accessToken}")
+                setBody(accessCode)
+            }.body()
+            listener?.onTokens(tokens)
+            tokens
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
     }
 
     fun loggedIn(): Boolean {
@@ -232,7 +267,7 @@ class Client(
     }
 
     suspend fun station(id: Int, ttl: Int): Spiff {
-        return retryGet("/api/radio/$id", ttl)
+        return retryGet("/api/stations/$id", ttl)
     }
 
     suspend fun movies(ttl: Int): MoviesView {
@@ -252,7 +287,7 @@ class Client(
     }
 
     suspend fun genre(name: String, ttl: Int): GenreView {
-        return retryGet("/api/movies/genres/$name", ttl)
+        return retryGet("/api/movie-genres/$name", ttl)
     }
 
     suspend fun playlist(ttl: Int? = null): Spiff {

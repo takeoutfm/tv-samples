@@ -21,6 +21,7 @@ import androidx.lifecycle.MutableLiveData
 import com.android.tv.reference.shared.util.Result
 import com.takeoutfm.tv.R
 import com.google.android.gms.auth.api.identity.SignInCredential
+import com.takeoutfm.tv.client.AccessCode
 
 /**
  * Handles sign in and sign out process and exposes methods used to authenticate the user and
@@ -45,6 +46,20 @@ class UserManager(
 
     suspend fun authWithPassword(endpoint: String, username: String, password: String): Result<Unit> {
         return when (val result = server.authWithPassword(endpoint, username, password)) {
+            is Result.Success -> {
+                updateUserInfo(result.data)
+                Result.Success(Unit)
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun requestAccessCode(endpoint: String): Result<AccessCode> {
+        return server.requestAccessCode(endpoint)
+    }
+
+    suspend fun authWithAccessCode(endpoint: String, accessCode: AccessCode): Result<Unit> {
+        return when (val result = server.authWithAccessCode(endpoint, accessCode)) {
             is Result.Success -> {
                 updateUserInfo(result.data)
                 Result.Success(Unit)

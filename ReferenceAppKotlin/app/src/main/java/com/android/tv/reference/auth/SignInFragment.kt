@@ -67,7 +67,8 @@ class SignInFragment : Fragment() {
                 is SignInStatus.Error -> {
                     val errorText = when (status) {
                         is SignInStatus.Error.InputError ->
-                            getString(R.string.empty_username_or_password)
+                            getString(R.string.invalid_endpoint)
+                        is SignInStatus.Error.InvalidAccessCode -> getString(R.string.invalid_code)
                         is SignInStatus.Error.InvalidPassword ->
                             getString(R.string.invalid_credentials)
                         is SignInStatus.Error.ServerError -> getString(R.string.server_error)
@@ -80,11 +81,26 @@ class SignInFragment : Fragment() {
                 }
             }
         }
+        viewModel.accessCode.observe(viewLifecycleOwner) {
+            binding.code.text = viewModel.accessCode.value?.code
+            binding.signInButton.isEnabled = true
+            var endpoint = binding.endpointEdit.text.toString()
+            if (!endpoint.startsWith("http")) {
+                endpoint = "https://$endpoint"
+            }
+            val link = if (endpoint.endsWith("/")) "${endpoint}link" else "${endpoint}/link"
+            binding.codeText.text = getString(R.string.code_help, link)
+        }
+        binding.obtainCodeButton.setOnClickListener {
+            binding.signInError.text = ""
+            val endpoint = binding.endpointEdit.text.toString()
+            viewModel.obtainAccessCode(endpoint)
+        }
         binding.signInButton.setOnClickListener {
             val endpoint = binding.endpointEdit.text.toString()
-            val username = binding.usernameEdit.text.toString()
-            val password = binding.passwordEdit.text.toString()
-            viewModel.signInWithPassword(endpoint, username, password)
+            viewModel.accessCode.value?.let { accessCode ->
+                viewModel.signInWithAccessCode(endpoint, accessCode)
+            }
         }
 //        startGoogleOneTapRequest()
         return binding.root

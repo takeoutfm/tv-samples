@@ -16,6 +16,7 @@
 package com.android.tv.reference.auth
 
 import com.android.tv.reference.shared.util.Result
+import com.takeoutfm.tv.client.AccessCode
 import com.takeoutfm.tv.client.Client
 
 /**
@@ -30,12 +31,19 @@ interface AuthClient {
         password: String
     ): Result<UserInfo>
 
+    suspend fun requestAccessCode(endpoint: String): Result<AccessCode>
+    suspend fun authWithAccessCode(
+        endpoint: String,
+        accessCode: AccessCode
+    ): Result<UserInfo>
+
     suspend fun authWithGoogleIdToken(idToken: String): Result<UserInfo>
     suspend fun invalidateToken(token: String): Result<Unit>
 }
 
 sealed class AuthClientError(message: String) : Exception(message) {
     object AuthenticationError : AuthClientError("Error authenticating user")
+    object AccessCodeError : AuthClientError("Error obtaining access code")
     data class ServerError(
         val errorCause: Exception
     ) : AuthClientError("Server error: ${errorCause.message}")
@@ -62,6 +70,35 @@ class TakeoutAuthClient : AuthClient {
                     refreshToken = tokens.refreshToken,
                     endpoint = endpoint,
                     displayName = username
+                )
+            )
+        }
+        return Result.Error(AuthClientError.AuthenticationError)
+    }
+
+    override suspend fun requestAccessCode(endpoint: String): Result<AccessCode> {
+        val client = Client(endpoint)
+        val accessCode = client.code()
+        if (accessCode != null) {
+            return Result.Success(accessCode)
+        }
+        return Result.Error(AuthClientError.AccessCodeError)
+    }
+
+    override suspend fun authWithAccessCode(
+        endpoint: String,
+        accessCode: AccessCode,
+    ): Result<UserInfo> {
+        val client = Client(endpoint)
+        val tokens = client.checkCode(accessCode)
+        if (tokens != null) {
+            return Result.Success(
+                UserInfo(
+                    accessToken = tokens.accessToken,
+                    mediaToken = tokens.mediaToken,
+                    refreshToken = tokens.refreshToken,
+                    endpoint = endpoint,
+                    displayName = ""
                 )
             )
         }

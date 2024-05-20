@@ -29,15 +29,19 @@
     <string name="email">Username</string>
     <string name="password">Password</string>
     <string name="sign_in">Sign in</string>
+    <string name="obtain_code">Get Code</string>
     <string name="sign_out">Sign out</string>
     <string name="not_signed_in">Not signed in</string>
     <string name="sign_in_error">Error signing in: %1$s</string>
     <string name="empty_username_or_password">Both username and password must be provided</string>
+    <string name="invalid_endpoint">Invalid endpoint</string>
     <string name="invalid_credentials">Invalid credentials</string>
+    <string name="invalid_code">Code not authorized</string>
     <string name="onetap_error">One Tap returned an error</string>
     <string name="server_error">Server error</string>
     <string name="unknown_error">Unknown error</string>
     <string name="sign_in_intro">Without any changes, this app uses local authorization (MockAuthClient). You can log in using "%1$s" as the email and any non-empty string as the password. To update the app to use remote auth, see the RemoteAuthClient class.</string>
+    <string name="code_help">Enter code using app or at %1$s, then press "Sign In"</string>
 
     <!-- Channel strings -->
     <string name="new_channel_name">New Releases</string>
