@@ -333,10 +333,34 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     private fun toProfile(p: ProfileView): Profile {
+        val videos = mutableListOf<Video>()
+        val series = mutableListOf<Series>()
+
+        if (p.movies.starring != null) {
+            for (m in p.movies.starring) {
+                val id = "takeout://movies/${m.id}"
+                val v = allMovies.firstOrNull { it.id == id }
+                if (v != null) {
+                    videos.add(v)
+                }
+            }
+        }
+
+        if (p.shows.starring != null) {
+            for (s in p.shows.starring) {
+                val id = "takeout://tv/series/${s.id}"
+                val v = allSeries.firstOrNull { it.id == id }
+                if (v != null) {
+                    series.add(v)
+                }
+            }
+        }
+
         return Profile(
             id = "takeout://people/${p.person.peid}/profile",
             person = toPerson(p.person),
-            videos = p.movies.starring?.map { toVideo(it) } ?: emptyList()
+            videos = videos,
+            series = series,
         )
     }
 

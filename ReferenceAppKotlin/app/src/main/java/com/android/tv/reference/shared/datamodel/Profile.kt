@@ -8,4 +8,5 @@ class Profile(
     val id: String,
     val person: Person,
     val videos: List<Video>,
+    val series: List<Series>,
 ) : Parcelable

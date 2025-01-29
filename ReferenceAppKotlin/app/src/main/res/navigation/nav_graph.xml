@@ -140,6 +140,9 @@
         <action
             android:id="@+id/action_profileFragment_to_detailsFragment"
             app:destination="@id/detailsFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_seriesFragment"
+            app:destination="@id/seriesFragment" />
         <argument
             android:name="profile"
             app:argType="com.android.tv.reference.shared.datamodel.Profile" />

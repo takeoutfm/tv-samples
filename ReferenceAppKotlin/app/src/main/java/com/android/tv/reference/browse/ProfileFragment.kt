@@ -8,6 +8,7 @@ import androidx.leanback.app.DetailsSupportFragment
 import androidx.leanback.widget.*
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.shared.datamodel.Profile
+import com.android.tv.reference.shared.datamodel.Series
 import com.android.tv.reference.shared.datamodel.Video
 import com.takeoutfm.tv.R
 import com.squareup.picasso.Picasso
@@ -16,6 +17,7 @@ import com.squareup.picasso.Target
 class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListener {
     companion object {
         private const val MOVIES_ACTION = 1L
+        private const val SERIES_ACTION = 2L
     }
 
     private lateinit var profile: Profile
@@ -51,17 +53,33 @@ class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         mRowsAdapter.add(detailsOverview)
 
         val actionsAdapter = ArrayObjectAdapter()
-        val moviesAction = Action(MOVIES_ACTION, getString(R.string.header_movies))
-        actionsAdapter.add(moviesAction)
+        if (profile.videos.isNotEmpty()) {
+            val moviesAction = Action(MOVIES_ACTION, getString(R.string.header_movies))
+            actionsAdapter.add(moviesAction)
+        }
+        if (profile.series.isNotEmpty()) {
+            val seriesAction = Action(SERIES_ACTION, getString(R.string.header_series))
+            actionsAdapter.add(seriesAction)
+        }
         detailsOverview.actionsAdapter = actionsAdapter
 
         // Setup related row.
-        val starringRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
-        val header = HeaderItem(0, getString(R.string.header_movies))
-        profile.videos.forEach {
-            starringRowAdapter.add(it)
+        if (profile.videos.isNotEmpty()) {
+            val starringRowAdapter = ArrayObjectAdapter(VideoCardPresenter())
+            val header = HeaderItem(0, getString(R.string.header_movies))
+            profile.videos.forEach {
+                starringRowAdapter.add(it)
+            }
+            mRowsAdapter.add(ListRow(header, starringRowAdapter))
         }
-        mRowsAdapter.add(ListRow(header, starringRowAdapter))
+        if (profile.series.isNotEmpty()) {
+            val starringRowAdapter = ArrayObjectAdapter(SeriesCardPresenter())
+            val header = HeaderItem(0, getString(R.string.header_series))
+            profile.series.forEach {
+                starringRowAdapter.add(it)
+            }
+            mRowsAdapter.add(ListRow(header, starringRowAdapter))
+        }
 
         Picasso.get()
             .load(profile.person.thumbnailUri)
@@ -88,9 +106,17 @@ class ProfileFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
             return
         }
 
+        if (item is Series) {
+            findNavController().navigate(
+                ProfileFragmentDirections.actionProfileFragmentToSeriesFragment(item)
+            )
+            return
+        }
+
         if (item is Action) {
             when (item.id) {
                 MOVIES_ACTION -> setSelectedPosition(1)
+                SERIES_ACTION -> setSelectedPosition(2)
             }
         }
     }

@@ -37,7 +37,7 @@ class Client(
     private val client: HttpClient = client()
     private var listener: Listener? = null
 
-    private val version = "0.4.0" // #version#
+    private val version = "0.4.1" // #version#
 
     private fun client(timeout: Long = defaultTimeout): HttpClient {
         return HttpClient {

@@ -73,6 +73,7 @@
     <string name="header_cast">Cast</string>
     <string name="header_recommended">Related</string>
     <string name="header_season">Season %1$d</string>
+    <string name="header_series">TV Series</string>
 
     <string name="refresh">Refresh</string>
     <string name="watch_next">Watch Next</string>
