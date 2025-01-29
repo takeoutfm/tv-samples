@@ -51,14 +51,22 @@ class VideoCardPresenter : Presenter() {
 
         val separator = " \u2022 "
         val content = StringBuilder()
-        if (video.year != -1) content.append(video.year)
-        if (video.rating.isNotEmpty()) {
-            if (content.isNotEmpty()) content.append(separator)
-            content.append(video.rating)
-        }
-        if (video.duration.isNotEmpty()) {
-            if (content.isNotEmpty()) content.append(separator)
-            content.append(video.formattedDuration())
+        if (video.videoType == VideoType.EPISODE) {
+            content.append(video.formattedSeasonEpisode())
+            if (video.duration.isNotEmpty()) {
+                if (content.isNotEmpty()) content.append(separator)
+                content.append(video.formattedDuration())
+            }
+        } else {
+            if (video.year != -1) content.append(video.year)
+            if (video.rating.isNotEmpty()) {
+                if (content.isNotEmpty()) content.append(separator)
+                content.append(video.rating)
+            }
+            if (video.duration.isNotEmpty()) {
+                if (content.isNotEmpty()) content.append(separator)
+                content.append(video.formattedDuration())
+            }
         }
         binding.root.contentText = content
 

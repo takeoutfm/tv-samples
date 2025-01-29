@@ -41,12 +41,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     private var userInfo: UserInfo? = null
     private var client: Client? = null
 
-    private var allVideos = mutableListOf<Video>()
-    private var newVideos = mutableListOf<Video>()
-    private var addedVideos = mutableListOf<Video>()
-    private var recommendVideos = mutableListOf<VideoGroup>()
+    private var allMovies = mutableListOf<Video>()
+    private var newMovies = mutableListOf<Video>()
+    private var addedMovies = mutableListOf<Video>()
+    private var recommendMovies = mutableListOf<VideoGroup>()
     private var progressMap = mutableMapOf<String, Offset>()
-    private var etags = mutableMapOf<String, Video>()
+    private var etagMap = mutableMapOf<String, Video>()
+    private var allSeries = mutableListOf<Series>()
+    private var allEpisodes = mutableListOf<Video>()
 
     private suspend fun signOut() {
         val userManager = UserManager.getInstance(application.applicationContext)
@@ -105,11 +107,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     private fun clearCache() {
-        allVideos.clear()
-        newVideos.clear()
-        addedVideos.clear()
-        recommendVideos.clear()
+        allMovies.clear()
+        newMovies.clear()
+        addedMovies.clear()
+        recommendMovies.clear()
         progressMap.clear()
+        allSeries.clear()
+        allEpisodes.clear()
+        etagMap.clear()
     }
 
     private suspend fun load() {
@@ -119,21 +124,43 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             return
         }
 
-        if (allVideos.isNotEmpty()) {
+        if (etagMap.isNotEmpty()) {
             Timber.d("already loaded")
             return
         }
 
         try {
+            etagMap.clear()
+            allMovies.clear()
+
             Timber.d("loading movies")
             val movies = client!!.movies(0)
-            allVideos.clear()
-            allVideos.addAll(movies.movies.map { toVideo(it) })
-            etags.clear()
-            allVideos.forEach {
-                etags[it.etag] = it
+            Timber.d("got movies")
+            for (m in movies.movies) {
+                val video = toVideo(m)
+                allMovies.add(video)
+                etagMap[video.etag] = video
             }
             Timber.d("loading movies..done")
+
+            Timber.d("loading series")
+            allSeries.clear()
+            allEpisodes.clear()
+            val tvList = client!!.tvList(0)
+            for (s in tvList.series) {
+                val episodes = mutableListOf<TVEpisode>()
+                for (e in tvList.episodes) {
+                    val video = toVideo(s, e)
+                    allEpisodes.add(video)
+                    etagMap[video.etag] = video
+                    if (s.tvid == e.tvid) {
+                        episodes.add(e)
+                    }
+                }
+                allSeries.add(toSeries(s, episodes))
+            }
+            Timber.d("loading series..done")
+
             // also load home for new and added
             home()
             progress()
@@ -145,18 +172,25 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     private suspend fun home() {
         val view = client!!.home(0)
-        newVideos.clear()
-        addedVideos.clear()
-        recommendVideos.clear()
+        newMovies.clear()
+        addedMovies.clear()
+        recommendMovies.clear()
         view.newMovies.forEach {
-            newVideos.add(toVideo(it))
+            newMovies.add(toVideo(it))
         }
         view.addedMovies.forEach {
-            addedVideos.add(toVideo(it))
+            addedMovies.add(toVideo(it))
         }
         view.recommendMovies?.forEach { recommend ->
-            val videos = recommend.movies.map { m -> toVideo(m) }
-            recommendVideos.add(VideoGroup(category = recommend.name, videoList = videos))
+            val videos = mutableListOf<Video>()
+            for (m in recommend.movies) {
+                val v = etagMap[m.etag]
+                if (v != null) {
+                    videos.add(v)
+                }
+            }
+//            val videos = recommend.movies.map { m -> toVideo(m) }
+            recommendMovies.add(VideoGroup(category = recommend.name, videoList = videos))
         }
     }
 
@@ -171,14 +205,14 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     override suspend fun getHomeGroups(): List<VideoGroup> {
         load()
         val groups = mutableListOf<VideoGroup>()
-        if (recommendVideos.isNotEmpty()) {
-            groups.addAll(recommendVideos)
+        if (recommendMovies.isNotEmpty()) {
+            groups.addAll(recommendMovies)
         }
-        if (newVideos.isNotEmpty()) {
-            groups.add(VideoGroup(category = "New Releases", newVideos))
+        if (newMovies.isNotEmpty()) {
+            groups.add(VideoGroup(category = "New Releases", newMovies))
         }
-        if (addedVideos.isNotEmpty()) {
-            groups.add(VideoGroup(category = "Recently Added", addedVideos))
+        if (addedMovies.isNotEmpty()) {
+            groups.add(VideoGroup(category = "Recently Added", addedMovies))
         }
         return groups
     }
@@ -188,7 +222,15 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             clearCache()
         }
         load()
-        return allVideos
+        return allMovies
+    }
+
+    override suspend fun getAllSeries(refresh: Boolean): List<Series> {
+        if (refresh) {
+            clearCache()
+        }
+        load()
+        return allSeries
     }
 
     private val idPattern = Regex("""/([0-9]+)/?""")
@@ -199,15 +241,22 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
     }
 
     // takeout://movies/$id
+    // takeout://tv/episodes/$id
     override suspend fun getVideoDetail(id: String): Detail? {
         if (!checkSignedIn()) return null
-        val view = client!!.movie(getId(id), 0)
-        return toDetail(view)
+        if (id.startsWith("takeout://movies/")) {
+            val view = client!!.movie(getId(id), 0)
+            return toDetail(view)
+        } else if (id.startsWith("takeout://tv/episodes/")) {
+            val view = client!!.tvEpisode(getId(id), 0)
+            return toDetail(view)
+        }
+        return null
     }
 
     override suspend fun getProfile(id: String): Profile? {
         if (!checkSignedIn()) return null
-        var profile: Profile? = null
+        var profile: Profile?
         val view = client!!.profile(getId(id), 0)
         profile = toProfile(view)
         return profile
@@ -223,16 +272,16 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
 
     override fun getVideoById(id: String): Video? {
         // allow lookup by id or etag
-        return allVideos.firstOrNull { it.id == id } ?: etags[id]
+        return allMovies.firstOrNull { it.id == id } ?: etagMap[id]
     }
 
     override fun getVideoByVideoUri(uri: String): Video? {
-        return allVideos
+        return allMovies
             .firstOrNull { it.videoUri == uri }
     }
 
     override fun getAllVideosFromSeries(seriesUri: String): List<Video> {
-        return allVideos.filter { it.seriesUri == seriesUri }
+        return allMovies.filter { it.seriesUri == seriesUri }
     }
 
     override suspend fun updateProgress(progress: List<Progress>): Int {
@@ -275,7 +324,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         progress()
         val list = mutableListOf<Progress>()
         progressMap.values.forEach {
-            val video = etags[it.etag]
+            val video = etagMap[it.etag]
             if (video != null) {
                 list.add(toProgress(video, it))
             }
@@ -283,18 +332,18 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         return list
     }
 
-    private fun toProfile(p: com.takeoutfm.tv.client.ProfileView): Profile {
+    private fun toProfile(p: ProfileView): Profile {
         return Profile(
-            id = "takeout://people/${p.person.id}/profile",
+            id = "takeout://people/${p.person.peid}/profile",
             person = toPerson(p.person),
-            videos = p.starring?.map { toVideo(it) } ?: emptyList()
+            videos = p.movies.starring?.map { toVideo(it) } ?: emptyList()
         )
     }
 
     private fun toPerson(p: com.takeoutfm.tv.client.Person): Person {
         val endpoint = userInfo?.endpoint ?: ""
         return Person(
-            id = "takeout://people/${p.id}",
+            id = "takeout://people/${p.peid}",
             name = p.name,
             bio = p.bio ?: "",
             birthplace = p.birthplace ?: "",
@@ -311,7 +360,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
-    private fun toDetail(view: com.takeoutfm.tv.client.MovieView): Detail {
+    private fun toDetail(view: MovieView): Detail {
         return Detail(
             id = "takeout://movies/${view.movie.id}/detail",
             uri = "${client!!.endpoint()}${view.location}",
@@ -326,13 +375,28 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
+    private fun toDetail(view: TVEpisodeView): Detail {
+        return Detail(
+            id = "takeout://tv/episodes/${view.episode.id}/detail",
+            uri = "${client!!.endpoint()}${view.location}",
+            headers = mapOf(
+                HttpHeaders.Authorization to "Bearer ${userInfo?.mediaToken}",
+                HttpHeaders.UserAgent to client!!.userAgent()
+            ),
+            video = toVideo(view.series, view.episode),
+            genres = emptyList(),
+            cast = view.cast?.map { toCast(it) } ?: emptyList(),
+            related = emptyList(),
+        )
+    }
+
     private fun category(title: String): String {
         val ch = title[0]
         return if (ch.isDigit()) {
             // all numeric will be category #
             "#"
         } else {
-            ch.uppercase();
+            ch.uppercase()
         }
     }
 
@@ -362,14 +426,63 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         )
     }
 
+    private fun toSeries(s: TVSeries, episodes: List<TVEpisode>): Series {
+        val endpoint = userInfo?.endpoint ?: ""
+        val posterUrl = "$endpoint/img/tm/w342${s.posterPath}"
+        val backdropUrl = "$endpoint/img/tm/w1280${s.backdropPath}"
+        val uri = "takeout://tv/series/${s.id}"
+        return Series(
+            id = uri,
+            name = s.name,
+            thumbnailUri = posterUrl,
+            backgroundImageUri = backdropUrl,
+            tagline = s.tagline,
+            rating = s.rating,
+            year = s.year(),
+            seasonCount = s.seasonCount,
+            episodeCount = s.episodeCount,
+            episodes = episodes.map { toVideo(s, it) }
+        )
+    }
+
+    private fun toVideo(s: TVSeries, e: TVEpisode): Video {
+        val endpoint = userInfo?.endpoint ?: ""
+        val posterUrl = "$endpoint/img/tm/w300${e.stillPath}"
+        val backdropUrl = "$endpoint/img/tm/w1280${s.backdropPath}"
+        val category = category(s.sortName)
+        val vote = if (e.voteAverage == null) 0 else (e.voteAverage * 10).toInt()
+        val uri = "takeout://tv/episodes/${e.id}"
+        return Video(
+            id = uri,
+            name = e.name,
+            description = e.overview,
+            uri = uri,
+            videoUri = "", // get from detail
+            thumbnailUri = posterUrl,
+            backgroundImageUri = backdropUrl,
+            category = category,
+            videoType = VideoType.EPISODE,
+            seasonNumber = "${e.season}",
+            episodeNumber = "${e.episode}",
+            seriesUri = "takeout://tv/series/${s.id}",
+            seasonUri = "takeout://tv/series/${s.id}/season/${e.season}",
+            vote = vote,
+            year = e.year(),
+            rating = s.rating,
+            duration = e.iso8601(),
+            tagline = s.tagline,
+            etag = e.key()
+        )
+    }
+
     private fun toProgress(video: Video, offset: Offset): Progress {
         // TODO optimize this
-        var date: Date? = null
+        var date: Date?
         try {
             val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             df.timeZone = TimeZone.getTimeZone("UTC")
             date = df.parse(offset.date)
-        } catch (e: ParseException) {
+        } catch (_: ParseException) {
             val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
             df.timeZone = TimeZone.getTimeZone("UTC")
             date = df.parse(offset.date)

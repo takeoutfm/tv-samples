@@ -40,6 +40,10 @@ class FileVideoRepository(override val application: Application) : VideoReposito
         return _allVideos
     }
 
+    override suspend fun getAllSeries(refresh: Boolean): List<Series> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getHomeGroups(): List<VideoGroup> {
         TODO("Not yet implemented")
     }

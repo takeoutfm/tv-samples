@@ -79,6 +79,10 @@ class Video(
         }
     }
 
+    fun formattedSeasonEpisode(): String {
+        return "S%sE%s".format(seasonNumber, episodeNumber)
+    }
+
     /**
      * The user has "finished" a video if the end credits start OR an approximation based on the
      * content length. We do not have metadata that contains the timestamp for when credits appear

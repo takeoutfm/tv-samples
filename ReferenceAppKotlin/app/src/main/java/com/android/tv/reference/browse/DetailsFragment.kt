@@ -19,6 +19,7 @@ import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Cast
 import com.android.tv.reference.shared.datamodel.Profile
 import com.android.tv.reference.shared.datamodel.Video
+import com.android.tv.reference.shared.datamodel.VideoType
 import com.android.tv.reference.shared.watchprogress.WatchProgress
 import com.android.tv.reference.shared.watchprogress.WatchProgressDao
 import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
@@ -70,20 +71,37 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
 
         val separator = " \u2022 "
         val detail = StringBuilder()
-        if (video.year != -1) {
-            detail.append(video.year)
-        }
-        if (video.rating.isNotEmpty()) {
-            if (detail.isNotEmpty()) detail.append(separator)
-            detail.append(video.rating)
-        }
-        if (video.duration.isNotEmpty()) {
-            if (detail.isNotEmpty()) detail.append(separator)
-            detail.append(video.formattedDuration())
-        }
-        if (video.tagline.isNotEmpty()) {
-            if (detail.isNotEmpty()) detail.append(separator)
-            detail.append(video.tagline)
+
+        if (video.videoType == VideoType.EPISODE) {
+            detail.append(video.formattedSeasonEpisode())
+            if (video.duration.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.formattedDuration())
+            }
+            if (video.year != -1) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.year)
+            }
+            if (video.rating.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.rating)
+            }
+        } else {
+            if (video.year != -1) {
+                detail.append(video.year)
+            }
+            if (video.rating.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.rating)
+            }
+            if (video.duration.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.formattedDuration())
+            }
+            if (video.tagline.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.tagline)
+            }
         }
 
         // Details

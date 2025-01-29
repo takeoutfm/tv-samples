@@ -71,4 +71,4 @@ assets:
 	cp ${RELEASE_APK} ${ASSETS}/com.takeoutfm.tv-${VERSION}.apk
 
 version:
-	scripts/version.sh && git commit -a
+	scripts/version.sh

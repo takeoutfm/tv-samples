@@ -37,7 +37,7 @@ class Client(
     private val client: HttpClient = client()
     private var listener: Listener? = null
 
-    private val version = "0.3.0" // #version#
+    private val version = "0.4.0" // #version#
 
     private fun client(timeout: Long = defaultTimeout): HttpClient {
         return HttpClient {
@@ -282,8 +282,24 @@ class Client(
         return retryGet("/api/movies/$id/playlist", ttl)
     }
 
-    suspend fun profile(id: Int, ttl: Int): ProfileView {
-        return retryGet("/api/profiles/$id", ttl)
+    suspend fun tvList(ttl: Int): TVListView {
+        return retryGet("/api/tv", ttl)
+    }
+
+    suspend fun tvShows(ttl: Int): TVShowsView {
+        return retryGet("/api/tv/series", ttl)
+    }
+
+    suspend fun tvSeries(id: Int, ttl: Int): TVSeriesView {
+        return retryGet("/api/tv/series/$id", ttl)
+    }
+
+    suspend fun tvEpisode(id: Int, ttl: Int): TVEpisodeView {
+        return retryGet("/api/tv/episodes/$id", ttl)
+    }
+
+    suspend fun profile(peid: Int, ttl: Int): ProfileView {
+        return retryGet("/api/profiles/$peid", ttl)
     }
 
     suspend fun genre(name: String, ttl: Int): GenreView {

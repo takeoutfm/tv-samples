@@ -20,15 +20,20 @@ import androidx.leanback.widget.DividerRow
 import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
+import com.android.tv.reference.shared.datamodel.Series
 import com.android.tv.reference.shared.datamodel.VideoGroup
 
 class BrowseAdapter(watchProgress: VideoGroup,
                     videoGroup: List<VideoGroup>,
+                    series: List<Series>,
                     customMenus: List<BrowseCustomMenu>) :
     ArrayObjectAdapter(ListRowPresenter()) {
     init {
         if (watchProgress.videoList.isNotEmpty()) {
             addVideoGroups(listOf(watchProgress))
+        }
+        if (series.isNotEmpty()) {
+            addSeries(series)
         }
         addVideoGroups(videoGroup)
         add(DividerRow())
@@ -43,6 +48,14 @@ class BrowseAdapter(watchProgress: VideoGroup,
             val headerItem = HeaderItem(it.category)
             add(ListRow(headerItem, listRowAdapter))
         }
+    }
+
+    private fun addSeries(series: List<Series>) {
+        val seriesPresenter = SeriesCardPresenter()
+        val listRowAdapter = ArrayObjectAdapter(seriesPresenter)
+        listRowAdapter.addAll(0, series)
+        val headerItem = HeaderItem("TV Series")
+        add(ListRow(headerItem, listRowAdapter))
     }
 
     private fun addCustomMenus(customMenus: List<BrowseCustomMenu>) {

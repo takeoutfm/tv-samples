@@ -33,14 +33,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion 33
 
     defaultConfig {
         applicationId "com.takeoutfm.tv"
         minSdkVersion 26
+        compileSdkVersion 33
         targetSdkVersion 33
-        versionCode 300 // #versionCode#
-        versionName "0.3.0" // #version#
+        versionCode 400 // #versionCode#
+        versionName "0.4.0" // #version#
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testOptions.unitTests.includeAndroidResources = true
@@ -90,10 +90,11 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
-    lintOptions {
+    namespace 'com.takeoutfm.tv'
+    lint {
         abortOnError false
     }
+
 }
 
 dependencies {
@@ -140,10 +141,10 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
 
     // Exoplayer for playback
-    implementation "com.google.android.exoplayer:exoplayer-core:2.18.1"
-    implementation "com.google.android.exoplayer:exoplayer-ui:2.18.1"
-    implementation "com.google.android.exoplayer:extension-leanback:2.18.1"
-    implementation "com.google.android.exoplayer:extension-mediasession:2.18.1"
+    implementation "com.google.android.exoplayer:exoplayer-core:2.19.1"
+    implementation "com.google.android.exoplayer:exoplayer-ui:2.19.1"
+    implementation "com.google.android.exoplayer:extension-leanback:2.19.1"
+    implementation "com.google.android.exoplayer:extension-mediasession:2.19.1"
 
     // Google Play Services for identity
     implementation "com.google.android.gms:play-services-auth:20.3.0"

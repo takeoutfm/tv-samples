@@ -21,27 +21,21 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
-import android.view.View
-import android.view.ViewGroup
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
-import androidx.leanback.app.ProgressBarManager
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.fragment.findNavController
 import com.android.tv.reference.repository.VideoRepositoryFactory
-import com.android.tv.reference.shared.datamodel.Progress
+import com.android.tv.reference.shared.datamodel.Series
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.android.tv.reference.shared.image.BlurImageTransformation
 import com.android.tv.reference.shared.image.OverlayImageTransformation
-import com.android.tv.reference.shared.watchprogress.WatchProgress
 import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
 import com.android.tv.reference.shared.watchprogress.WatchProgressRepository
-import com.takeoutfm.tv.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
-import kotlinx.coroutines.launch
+import com.takeoutfm.tv.R
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
@@ -111,6 +105,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
             adapter = BrowseAdapter(
                 doWatchProgress(),
                 viewModel.browseContent.value ?: listOf(),
+                viewModel.seriesContent.value ?: listOf(),
                 viewModel.customMenuItems.value ?: listOf()
             )
         }
@@ -119,6 +114,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         ) {
             adapter = BrowseAdapter(
                 doWatchProgress(), it,
+                viewModel.seriesContent.value ?: listOf(),
                 viewModel.customMenuItems.value ?: listOf()
             )
         }
@@ -127,7 +123,9 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         ) {
             adapter = BrowseAdapter(
                 doWatchProgress(),
-                viewModel.browseContent.value ?: listOf(), it
+                viewModel.browseContent.value ?: listOf(),
+                viewModel.seriesContent.value ?: listOf(),
+                it
             )
         }
         viewModel.isSignedIn.observe(
@@ -161,13 +159,22 @@ class BrowseFragment : BrowseSupportFragment(), Target {
                     )
 //                    clearBackground()
                 }
+
+                is Series -> {
+                    findNavController().navigate(
+                        BrowseFragmentDirections.actionBrowseFragmentToSeriesFragment(item)
+                    )
+                }
+
                 is BrowseCustomMenu.MenuItem -> item.handler()
             }
         }
 
         setOnItemViewSelectedListener { _, item, _, _ ->
             if (item is Video) {
-                updateBackgroundDelayed(item)
+                updateBackgroundDelayed(item.backgroundImageUri)
+            } else if (item is Series) {
+                updateBackgroundDelayed(item.backgroundImageUri)
             }
         }
 
@@ -188,7 +195,7 @@ class BrowseFragment : BrowseSupportFragment(), Target {
         backgroundManager.clearDrawable()
         if (selectedVideo != null) {
             backgroundUri = ""
-            updateBackgroundDelayed(selectedVideo!!)
+            updateBackgroundDelayed(selectedVideo!!.backgroundImageUri)
         }
     }
 
@@ -208,10 +215,10 @@ class BrowseFragment : BrowseSupportFragment(), Target {
      * This delay allows the user to quickly scroll through content without flashing a changing
      * background with every item that is passed.
      */
-    private fun updateBackgroundDelayed(video: Video) {
-        if (backgroundUri != video.backgroundImageUri) {
+    private fun updateBackgroundDelayed(uri: String) {
+        if (backgroundUri != uri) {
             handler.removeCallbacks(backgroundRunnable)
-            backgroundUri = video.backgroundImageUri
+            backgroundUri = uri
 
             if (backgroundUri.isEmpty()) {
                 backgroundManager.clearDrawable()

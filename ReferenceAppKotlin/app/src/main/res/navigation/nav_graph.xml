@@ -70,6 +70,9 @@
         <action
             android:id="@+id/action_browseFragment_to_detailsFragment"
             app:destination="@id/detailsFragment" />
+        <action
+            android:id="@+id/action_browseFragment_to_seriesFragment"
+            app:destination="@id/seriesFragment" />
     </fragment>
     <fragment
         android:id="@+id/noFirebaseFragment"
@@ -112,6 +115,20 @@
         <argument
             android:name="video"
             app:argType="com.android.tv.reference.shared.datamodel.Video" />
+    </fragment>
+    <fragment
+        android:id="@+id/seriesFragment"
+        android:name="com.android.tv.reference.browse.SeriesFragment"
+        android:label="SeriesFragment">
+        <action
+            android:id="@+id/action_seriesFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
+        <action
+            android:id="@+id/action_seriesFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <argument
+            android:name="series"
+            app:argType="com.android.tv.reference.shared.datamodel.Series" />
     </fragment>
     <fragment
         android:id="@+id/profileFragment"

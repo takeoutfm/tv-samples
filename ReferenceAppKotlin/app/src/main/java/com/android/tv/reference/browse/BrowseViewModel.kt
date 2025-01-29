@@ -22,6 +22,7 @@ import com.android.tv.reference.auth.UserManager
 import com.android.tv.reference.repository.VideoRepository
 import com.android.tv.reference.repository.VideoRepositoryFactory
 import com.android.tv.reference.shared.datamodel.Progress
+import com.android.tv.reference.shared.datamodel.Series
 import com.android.tv.reference.shared.datamodel.VideoGroup
 import com.android.tv.reference.shared.watchprogress.WatchProgress
 import com.android.tv.reference.shared.watchprogress.WatchProgressDatabase
@@ -34,6 +35,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     private val userManager = UserManager.getInstance(application.applicationContext)
     private val watchProgressDatabase = WatchProgressDatabase.getDatabase(application)
     val browseContent = MutableLiveData<List<VideoGroup>>()
+    val seriesContent = MutableLiveData<List<Series>>()
     val customMenuItems = MutableLiveData<List<BrowseCustomMenu>>(listOf())
     val isSignedIn = Transformations.map(userManager.userInfo) { it != null }
     val watchProgress = watchProgressDatabase.watchProgressDao().getRecentWatchProgress()
@@ -48,6 +50,9 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
     private suspend fun asyncRefresh() {
         val groupList = getVideoGroupList(videoRepository)
         browseContent.value = groupList
+
+        val seriesList = videoRepository.getAllSeries()
+        seriesContent.value = seriesList
     }
 
     suspend fun getVideoGroupList(repository: VideoRepository): List<VideoGroup> {

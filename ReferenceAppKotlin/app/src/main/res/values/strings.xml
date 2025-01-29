@@ -62,7 +62,7 @@
 
     <!-- Watch Next -->
     <string name="season">%1$s Season %2$s</string>
-    <string name="endpoint">https://host</string>
+    <string name="endpoint">https://takeout.fm</string>
 
     <string name="new_releases">New Releases</string>
     <string name="recently_added">Recently Added</string>
@@ -72,6 +72,7 @@
     <string name="header_play">Play</string>
     <string name="header_cast">Cast</string>
     <string name="header_recommended">Related</string>
+    <string name="header_season">Season %1$d</string>
 
     <string name="refresh">Refresh</string>
     <string name="watch_next">Watch Next</string>

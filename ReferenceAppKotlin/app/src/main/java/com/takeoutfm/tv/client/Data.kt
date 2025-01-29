@@ -15,8 +15,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with TakeoutFM.  If not, see <https://www.gnu.org/licenses/>.
 
+@file:OptIn(InternalSerializationApi::class)
+
 package com.takeoutfm.tv.client
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.DateTimeException
@@ -233,6 +236,100 @@ fun Movie.iso8601(): String {
     return "PT%02dH%02dM".format(hours, mins)
 }
 
+
+@Serializable
+data class TVSeries(
+    @SerialName("ID") val id: Int,
+    @SerialName("TVID") val tvid: Int,
+    @SerialName("Name") val name: String,
+    @SerialName("SortName") val sortName: String,
+    @SerialName("Overview") val overview: String,
+    @SerialName("Date") val date: String,
+    @SerialName("EndDate") val endDate: String,
+    @SerialName("Tagline") val tagline: String,
+    @SerialName("SeasonCount") val seasonCount: Int,
+    @SerialName("EpisodeCount") val episodeCount: Int,
+    @SerialName("VoteAverage") val voteAverage: Float?,
+    @SerialName("VoteCount") val voteCount: Int?,
+    @SerialName("PosterPath") val posterPath: String,
+    @SerialName("BackdropPath") val backdropPath: String,
+    @SerialName("Rating") val rating: String,
+)
+
+fun TVSeries.year(): Int {
+    return year(date)
+}
+
+@Serializable
+data class TVEpisode(
+    @SerialName("ID") val id: Int,
+    @SerialName("TVID") val tvid: Int,
+    @SerialName("Name") val name: String,
+    @SerialName("Overview") val overview: String,
+    @SerialName("Date") val date: String,
+    @SerialName("StillPath") val stillPath: String,
+    @SerialName("Runtime") val runtime: Int,
+    @SerialName("Season") val season: Int,
+    @SerialName("Episode") val episode: Int,
+    @SerialName("VoteAverage") val voteAverage: Float?,
+    @SerialName("VoteCount") val voteCount: Int?,
+    @SerialName("ETag") val etag: String,
+    @SerialName("Size") val size: Long,
+)
+
+fun TVEpisode.year(): Int {
+    return year(date)
+}
+
+fun TVEpisode.key(): String {
+    return etag.replace("\"", "")
+}
+
+fun TVEpisode.iso8601(): String {
+    val hours = runtime / 60
+    val mins = runtime % 60
+    return "PT%02dH%02dM".format(hours, mins)
+}
+
+@Serializable
+data class TVListView(
+    @SerialName("Series") val series: List<TVSeries>,
+    @SerialName("Episodes") val episodes: List<TVEpisode>
+)
+
+@Serializable
+data class TVShowsView(
+    @SerialName("Series") val series: List<TVSeries>
+)
+
+@Serializable
+data class TVSeriesView(
+    @SerialName("Series") val series: TVSeries,
+    @SerialName("Episodes") val episodes: List<TVEpisode>,
+    @SerialName("Cast") val cast: List<Cast>?,
+    @SerialName("Crew") val crew: List<Crew>?,
+    @SerialName("Starring") val starring: List<Person>?,
+    @SerialName("Directing") val directing: List<Person>?,
+    @SerialName("Writing") val writing: List<Person>?,
+    @SerialName("Genres") val genres: List<String>,
+    @SerialName("Vote") val vote: Int,
+    @SerialName("VoteCount") val voteCount: Int,
+)
+
+@Serializable
+data class TVEpisodeView(
+    @SerialName("Series") val series: TVSeries,
+    @SerialName("Episode") val episode: TVEpisode,
+    @SerialName("Location") val location: String,
+    @SerialName("Cast") val cast: List<Cast>?,
+    @SerialName("Crew") val crew: List<Crew>?,
+    @SerialName("Starring") val starring: List<Person>?,
+    @SerialName("Directing") val directing: List<Person>?,
+    @SerialName("Writing") val writing: List<Person>?,
+    @SerialName("Vote") val vote: Int,
+    @SerialName("VoteCount") val voteCount: Int,
+)
+
 @Serializable
 data class Person(
     @SerialName("ID") val id: Int,
@@ -249,24 +346,37 @@ fun Person.year(): Int {
     return year(birthday)
 }
 
+interface Role {
+    val person: Person
+    val role: String
+}
+
 @Serializable
 data class Cast(
     @SerialName("ID") val id: Int,
-    @SerialName("TMID") val tmid: Int,
+    @SerialName("TMID") val tmid: Int? = null,
+    @SerialName("TVID") val tvid: Int? = null,
+    @SerialName("EID") val eid: Int? = null,
     @SerialName("PEID") val peid: Int,
     @SerialName("Character") val character: String,
-    @SerialName("Person") val person: Person
-)
+    @SerialName("Person") override val person: Person,
+) : Role {
+    override val role get() = character
+}
 
 @Serializable
 data class Crew(
     @SerialName("ID") val id: Int,
-    @SerialName("TMID") val tmid: Int,
+    @SerialName("TMID") val tmid: Int? = null,
+    @SerialName("TVID") val tvid: Int? = null,
+    @SerialName("EID") val eid: Int? = null,
     @SerialName("PEID") val peid: Int,
     @SerialName("Department") val department: String,
     @SerialName("Job") val job: String,
-    @SerialName("Person") val person: Person
-)
+    @SerialName("Person") override val person: Person
+) : Role {
+    override val role get() = job
+}
 
 @Serializable
 data class Collection(
@@ -289,6 +399,7 @@ data class HomeView(
     @SerialName("AddedMovies") val addedMovies: List<Movie>,
     @SerialName("NewMovies") val newMovies: List<Movie>,
     @SerialName("RecommendMovies") val recommendMovies: List<Recommend>?,
+    @SerialName("AddedTVEpisodes") val addedTVEpisodes: List<TVEpisode>?,
 )
 
 @Serializable
@@ -356,11 +467,24 @@ data class MovieView(
 )
 
 @Serializable
-data class ProfileView(
-    @SerialName("Person") val person: Person,
+data class MovieCredits(
     @SerialName("Starring") val starring: List<Movie>?,
     @SerialName("Directing") val directing: List<Movie>?,
     @SerialName("Writing") val writing: List<Movie>?,
+)
+
+@Serializable
+data class TVCredits(
+    @SerialName("Starring") val starring: List<TVSeries>?,
+    @SerialName("Directing") val directing: List<TVSeries>?,
+    @SerialName("Writing") val writing: List<TVSeries>?,
+)
+
+@Serializable
+data class ProfileView(
+    @SerialName("Person") val person: Person,
+    @SerialName("Movies") val movies: MovieCredits,
+    @SerialName("Shows") val shows: TVCredits,
 )
 
 @Serializable

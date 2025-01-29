@@ -29,6 +29,7 @@ interface VideoRepository {
      * @return List<Video>
      */
     suspend fun getAllVideos(refresh: Boolean = false): List<Video>
+    suspend fun getAllSeries(refresh: Boolean = false): List<Series>
     suspend fun getHomeGroups(): List<VideoGroup>
     suspend fun getVideoDetail(id: String): Detail?
     suspend fun getProfile(id: String): Profile?
