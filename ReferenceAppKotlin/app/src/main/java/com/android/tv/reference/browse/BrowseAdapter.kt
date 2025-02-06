@@ -54,7 +54,7 @@ class BrowseAdapter(watchProgress: VideoGroup,
         val seriesPresenter = SeriesCardPresenter()
         val listRowAdapter = ArrayObjectAdapter(seriesPresenter)
         listRowAdapter.addAll(0, series)
-        val headerItem = HeaderItem("TV Series")
+        val headerItem = HeaderItem("TV Shows")
         add(ListRow(headerItem, listRowAdapter))
     }
 

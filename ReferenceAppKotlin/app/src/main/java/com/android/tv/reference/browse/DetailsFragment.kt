@@ -5,8 +5,10 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Html
 import android.util.DisplayMetrics
 import android.view.View
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.viewModels
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.DetailsSupportFragment
@@ -70,26 +72,29 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
         title = getString(R.string.app_name)
 
         val separator = " \u2022 "
+        val title = StringBuilder()
         val detail = StringBuilder()
+        val description = StringBuilder()
 
         if (video.videoType == VideoType.EPISODE) {
+            title.append(video.name).append(" <small>(").append(video.year).append(")</small>")
+
             detail.append(video.formattedSeasonEpisode())
-            if (video.duration.isNotEmpty()) {
-                if (detail.isNotEmpty()) detail.append(separator)
-                detail.append(video.formattedDuration())
-            }
-            if (video.year != -1) {
-                if (detail.isNotEmpty()) detail.append(separator)
-                detail.append(video.year)
-            }
             if (video.rating.isNotEmpty()) {
                 if (detail.isNotEmpty()) detail.append(separator)
                 detail.append(video.rating)
             }
+            if (video.duration.isNotEmpty()) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.formattedDuration())
+            }
+            if (video.vote > 0) {
+                if (detail.isNotEmpty()) detail.append(separator)
+                detail.append(video.formattedVote())
+            }
+            description.append(video.description)
         } else {
-            if (video.year != -1) {
-                detail.append(video.year)
-            }
+            title.append(video.name).append(" <small>(").append(video.year).append(")</small>")
             if (video.rating.isNotEmpty()) {
                 if (detail.isNotEmpty()) detail.append(separator)
                 detail.append(video.rating)
@@ -98,19 +103,21 @@ class DetailsFragment : DetailsSupportFragment(), Target, OnItemViewClickedListe
                 if (detail.isNotEmpty()) detail.append(separator)
                 detail.append(video.formattedDuration())
             }
-            if (video.tagline.isNotEmpty()) {
+            if (video.vote > 0) {
                 if (detail.isNotEmpty()) detail.append(separator)
-                detail.append(video.tagline)
+                detail.append(video.formattedVote())
             }
+            detail.append("&nbsp;&nbsp;&nbsp;<i>").append(video.tagline).append("</i>")
+            description.append(video.description)
         }
 
         // Details
         val rowPresenter =
             FullWidthDetailsOverviewRowPresenter(object : AbstractDetailsDescriptionPresenter() {
                 override fun onBindDescription(vh: ViewHolder?, item: Any?) {
-                    vh?.title?.text = video.name
-                    vh?.subtitle?.text = detail.toString()
-                    vh?.body?.text = video.description
+                    vh?.title?.text = HtmlCompat.fromHtml(title.toString(), 0)
+                    vh?.subtitle?.text = HtmlCompat.fromHtml(detail.toString(), 0)
+                    vh?.body?.text = HtmlCompat.fromHtml(description.toString(), 0)
                 }
             })
 

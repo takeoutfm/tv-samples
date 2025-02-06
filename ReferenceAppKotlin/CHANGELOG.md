@@ -1,3 +1,8 @@
+## 0.4.2
+
+- change to "TV Shows"
+- display vote % and update details
+
 ## 0.4.1
 
 - support TV series in profile

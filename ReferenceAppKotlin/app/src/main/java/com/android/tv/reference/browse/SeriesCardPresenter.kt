@@ -46,14 +46,17 @@ class SeriesCardPresenter : Presenter() {
         checkNotNull(item)
         val series = item as Series
         val binding = PresenterSeriesCardBinding.bind(viewHolder.view)
-        binding.root.titleText = series.name
+        binding.root.titleText = "%s (%d)".format(series.name, series.year)
 
         val separator = " \u2022 "
         val content = StringBuilder()
-        if (series.year != -1) content.append(series.year)
         if (series.rating.isNotEmpty()) {
             if (content.isNotEmpty()) content.append(separator)
             content.append(series.rating)
+        }
+        if (series.vote > 0) {
+            if (content.isNotEmpty()) content.append(separator)
+            content.append(series.formattedVote())
         }
         binding.root.contentText = content
 

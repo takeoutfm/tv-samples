@@ -18,6 +18,7 @@ package com.android.tv.reference.browse
 import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.Presenter
 import com.android.tv.reference.shared.datamodel.Video
 import com.android.tv.reference.shared.datamodel.VideoType
@@ -47,18 +48,25 @@ class VideoCardPresenter : Presenter() {
         checkNotNull(item)
         val video = item as Video
         val binding = PresenterVideoCardBinding.bind(viewHolder.view)
-        binding.root.titleText = video.name
 
         val separator = " \u2022 "
         val content = StringBuilder()
         if (video.videoType == VideoType.EPISODE) {
+            binding.root.titleText = video.name
+
             content.append(video.formattedSeasonEpisode())
             if (video.duration.isNotEmpty()) {
                 if (content.isNotEmpty()) content.append(separator)
                 content.append(video.formattedDuration())
             }
+            if (video.vote > 0) {
+                if (content.isNotEmpty()) content.append(separator)
+                content.append(video.formattedVote())
+            }
         } else {
-            if (video.year != -1) content.append(video.year)
+            binding.root.titleText = "%s (%d)".format(video.name, video.year)
+
+//            if (video.year != -1) content.append(video.year)
             if (video.rating.isNotEmpty()) {
                 if (content.isNotEmpty()) content.append(separator)
                 content.append(video.rating)
@@ -67,8 +75,15 @@ class VideoCardPresenter : Presenter() {
                 if (content.isNotEmpty()) content.append(separator)
                 content.append(video.formattedDuration())
             }
+            if (video.vote > 0) {
+                if (content.isNotEmpty()) content.append(separator)
+                content.append(video.formattedVote())
+            }
         }
         binding.root.contentText = content
+        binding.root.badgeImage = AppCompatResources.getDrawable(
+            binding.root.context,
+            R.drawable.googleg_standard_color_18)
 
         Picasso.get().load(video.thumbnailUri).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).into(binding.root.mainImageView)

@@ -51,7 +51,7 @@ class Video(
     val rating: String = "",
     val year: Int = -1,
     val vote: Int = 0,
-    val etag: String = ""
+    val etag: String = "",
 ) : Parcelable {
 
     override fun toString(): String {
@@ -81,6 +81,10 @@ class Video(
 
     fun formattedSeasonEpisode(): String {
         return "S%sE%s".format(seasonNumber, episodeNumber)
+    }
+
+    fun formattedVote(): String {
+        return "%d%%".format(vote)
     }
 
     /**

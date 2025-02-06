@@ -29,9 +29,15 @@ class Series(
     val year: Int = -1,
     val seasonCount: Int,
     val episodeCount: Int,
-    val episodes: List<Video>
-) : Parcelable {
+    val episodes: List<Video>,
+    val vote: Int = 0,
+    ) : Parcelable {
+
     override fun toString(): String {
         return "Series(name='$name')"
+    }
+
+    fun formattedVote(): String {
+        return "%d%%".format(vote)
     }
 }

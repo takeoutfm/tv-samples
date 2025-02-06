@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
+import androidx.core.text.HtmlCompat
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.DetailsSupportFragment
 import androidx.leanback.widget.*
@@ -54,26 +55,33 @@ class SeriesFragment : DetailsSupportFragment(), Target, OnItemViewClickedListen
         title = getString(R.string.app_name)
 
         val separator = " \u2022 "
+        val title = StringBuilder()
         val detail = StringBuilder()
-        if (series.year != -1) {
-            detail.append(series.year)
-        }
+        val description = StringBuilder()
+
+        title.append(series.name).append(" <small>(").append(series.year).append(")</small>")
+
         if (series.rating.isNotEmpty()) {
             if (detail.isNotEmpty()) detail.append(separator)
             detail.append(series.rating)
         }
-        if (series.tagline.isNotEmpty()) {
+        if (series.vote > 0) {
             if (detail.isNotEmpty()) detail.append(separator)
-            detail.append(series.tagline)
+            detail.append(series.formattedVote())
         }
+        if (series.tagline.isNotEmpty()) {
+            detail.append("&nbsp;&nbsp;&nbsp;<i>").append(series.tagline).append("</i>")
+        }
+
+        description.append("")
 
         // Details
         val rowPresenter =
             FullWidthDetailsOverviewRowPresenter(object : AbstractDetailsDescriptionPresenter() {
                 override fun onBindDescription(vh: ViewHolder?, item: Any?) {
-                    vh?.title?.text = series.name
-                    vh?.subtitle?.text = detail.toString()
-                    vh?.body?.text = ""
+                    vh?.title?.text = HtmlCompat.fromHtml(title.toString(), 0)
+                    vh?.subtitle?.text = HtmlCompat.fromHtml(detail.toString(), 0)
+                    vh?.body?.text = HtmlCompat.fromHtml(description.toString(), 0)
                 }
             })
 

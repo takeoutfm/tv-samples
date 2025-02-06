@@ -455,6 +455,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
         val posterUrl = "$endpoint/img/tm/w342${s.posterPath}"
         val backdropUrl = "$endpoint/img/tm/w1280${s.backdropPath}"
         val uri = "takeout://tv/series/${s.id}"
+        val vote = if (s.voteAverage == null) 0 else (s.voteAverage * 10).toInt()
         return Series(
             id = uri,
             name = s.name,
@@ -463,6 +464,7 @@ class TakeoutVideoRepository(override val application: Application) : VideoRepos
             tagline = s.tagline,
             rating = s.rating,
             year = s.year(),
+            vote = vote,
             seasonCount = s.seasonCount,
             episodeCount = s.episodeCount,
             episodes = episodes.map { toVideo(s, it) }

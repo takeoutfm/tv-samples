@@ -39,8 +39,8 @@ android {
         minSdkVersion 26
         compileSdkVersion 33
         targetSdkVersion 33
-        versionCode 401 // #versionCode#
-        versionName "0.4.1" // #version#
+        versionCode 402 // #versionCode#
+        versionName "0.4.2" // #version#
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testOptions.unitTests.includeAndroidResources = true
